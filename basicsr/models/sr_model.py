@@ -104,7 +104,7 @@ class SRModel(BaseModel):
         # pixel loss
         if self.cri_pix:
             l_pix = self.cri_pix(self.output, self.gt)
-            l_total += l_pix
+            l_total += l_pix*5
             loss_dict['l_pix'] = l_pix
         # perceptual loss
         if self.cri_perceptual:
@@ -115,7 +115,12 @@ class SRModel(BaseModel):
             if l_style is not None:
                 l_total += l_style
                 loss_dict['l_style'] = l_style
-
+        # ssim loss
+        if self.cri_ssim:
+            l_ssim= 1-self.cri_ssim(self.output, self.gt)
+            l_total += l_ssim
+            loss_dict['l_ssim'] = l_ssim
+            
         l_total.backward()
         self.optimizer_g.step()
 

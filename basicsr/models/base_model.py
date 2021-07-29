@@ -8,6 +8,8 @@ from torch.nn.parallel import DataParallel, DistributedDataParallel
 from basicsr.models import lr_scheduler as lr_scheduler
 from basicsr.utils.dist_util import master_only
 
+from ptflops import get_model_complexity_info
+
 logger = logging.getLogger('basicsr')
 
 
@@ -119,6 +121,12 @@ class BaseModel():
         net = self.get_bare_model(net)
         net_str = str(net)
         net_params = sum(map(lambda x: x.numel(), net.parameters()))
+
+
+        macs, params = get_model_complexity_info(net, (1, 128, 128), as_strings=True,
+                                                print_per_layer_stat=True, verbose=True)
+        print('{:<30}  {:<8}'.format('Computational complexity: ', macs))
+        print('{:<30}  {:<8}'.format('Number of parameters: ', params))
 
         logger.info(f'Network: {net_cls_str}, with parameters: {net_params:,d}')
         logger.info(net_str)

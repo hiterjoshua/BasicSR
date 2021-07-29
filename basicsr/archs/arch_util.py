@@ -90,8 +90,8 @@ class RBRepSR(nn.Module):
     """Residual block without BN, without relu
 
     It has a style of:
-        -----Conv----+-
-         |___________|
+        -----Conv3----Conv3-----+-
+         |______________________|
 
     Args:
         num_feat (int): Channel number of intermediate features.
@@ -120,8 +120,8 @@ class RBRepSR_xt(nn.Module):
     """Residual block without BN, without relu
 
     It has a style of:
-        -----Conv----+-
-         |___________|
+        -----Conv1----Conv3----Conv1----+-
+         |______________________________|
 
     Args:
         num_feat (int): Channel number of intermediate features.
@@ -132,15 +132,15 @@ class RBRepSR_xt(nn.Module):
     """
 
     def __init__(self, num_feat=64, inside_feat=256, res_scale=1, pytorch_init=False):
-        super(RBRepSR, self).__init__()
+        super(RBRepSR_xt, self).__init__()
         self.res_scale = res_scale
-        self.conv1 = nn.Conv2d(num_feat, inside_feat, 1, 1, 1, bias=True)
-        self.conv2 = nn.Conv2d(inside_feat, num_feat, 3, 1, 1, bias=True)
-        self.conv3 = nn.Conv2d(inside_feat, num_feat, 1, 1, 1, bias=True)
+        self.conv1 = nn.Conv2d(num_feat, inside_feat, 1, 1,0, bias=True)
+        self.conv2 = nn.Conv2d(inside_feat, inside_feat, 3, 1, 1, bias=True)
+        self.conv3 = nn.Conv2d(inside_feat, num_feat, 1, 1, 0, bias=True)
         #self.relu = nn.ReLU(inplace=True)
 
         if not pytorch_init:
-            default_init_weights([self.conv1, self.conv2], 0.1)
+            default_init_weights([self.conv1, self.conv2, self.conv3], 0.1)
 
     def forward(self, x):
         identity = x
