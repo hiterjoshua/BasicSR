@@ -21,7 +21,6 @@ def mod_crop(img, scale):
         raise ValueError(f'Wrong img ndim: {img.ndim}.')
     return img
 
-
 def paired_random_crop(img_gts, img_lqs, gt_patch_size, scale, gt_path):
     """Paired random crop.
 

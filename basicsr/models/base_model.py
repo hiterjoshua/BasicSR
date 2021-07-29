@@ -182,7 +182,7 @@ class BaseModel():
             current_iter = 'latest'
         save_filename = f'{net_label}_{current_iter}.pth'
         save_path = os.path.join(self.opt['path']['models'], save_filename)
-
+        
         net = net if isinstance(net, list) else [net]
         param_key = param_key if isinstance(param_key, list) else [param_key]
         assert len(net) == len(param_key), 'The lengths of net and param_key should be the same.'

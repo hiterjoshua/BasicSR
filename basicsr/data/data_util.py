@@ -186,6 +186,53 @@ def paired_paths_from_meta_info_file(folders, keys, meta_info_file, filename_tmp
         paths.append(dict([(f'{input_key}_path', input_path), (f'{gt_key}_path', gt_path)]))
     return paths
 
+def paired_paths_from_folder_Real3w(folders, keys, need_gt):
+    """Generate paired paths from folders.
+
+    Args:
+        folders (list[str]): A list of folder path. The order of list should
+            be [input_folder, gt_folder].
+        keys (list[str]): A list of keys identifying folders. The order should
+            be in consistent with folders, e.g., ['lq', 'gt'].
+        filename_tmpl (str): Template for each filename. Note that the
+            template excludes the file extension. Usually the filename_tmpl is
+            for files in the input folder.
+
+    Returns:
+        list[str]: Returned path list.
+    """
+    assert len(folders) == 2, ('The len of folders should be 2 with [input_folder, gt_folder]. '
+                               f'But got {len(folders)}')
+    assert len(keys) == 2, ('The len of keys should be 2 with [input_key, gt_key]. ' f'But got {len(keys)}')
+    input_folder, gt_folder = folders
+    input_key, gt_key = keys
+
+    input_paths = list(scandir(input_folder))
+    gt_paths = list(scandir(gt_folder))
+    assert len(input_paths) == len(gt_paths), (f'{input_key} and {gt_key} datasets have different number of images: '
+                                               f'{len(input_paths)}, {len(gt_paths)}.')
+
+    paths = []
+    if need_gt:
+        for input_path in input_paths:
+            hr_p_pre = osp.split(osp.split(input_path)[0])[0]
+            back_name = osp.split(input_path)[1]
+            _x1_position = back_name.find('_x1')
+            fore_name = back_name[:_x1_position]
+            gt_name = fore_name +'_x4' +  '_' + back_name.split('_')[-1]
+
+            assert gt_name in gt_paths, (f'{gt_name} is not in ' f'{gt_key}_paths.')
+            gt_path = osp.join(gt_folder, gt_name)
+            input_path = osp.join(input_folder, input_path)
+            paths.append(dict([(f'{input_key}_path', input_path), (f'{gt_key}_path', gt_path)]))
+    else:
+        for input_path in input_paths:
+            gt_path = osp.join(gt_folder, input_path)
+            input_path = osp.join(input_folder, input_path)
+            paths.append(dict([(f'{input_key}_path', input_path), (f'{gt_key}_path', gt_path)]))
+    return paths
+
+
 
 def paired_paths_from_folder(folders, keys, filename_tmpl):
     """Generate paired paths from folders.

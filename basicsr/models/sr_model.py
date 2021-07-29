@@ -10,6 +10,8 @@ from basicsr.utils import get_root_logger, imwrite, tensor2img
 from basicsr.utils.registry import MODEL_REGISTRY
 from .base_model import BaseModel
 
+import cv2
+import numpy as np
 
 @MODEL_REGISTRY.register()
 class SRModel(BaseModel):
@@ -61,6 +63,11 @@ class SRModel(BaseModel):
             self.cri_perceptual = build_loss(train_opt['perceptual_opt']).to(self.device)
         else:
             self.cri_perceptual = None
+        
+        if train_opt.get('ssim_opt'):
+            self.cri_ssim = build_loss(train_opt['ssim_opt']).to(self.device)
+        else:
+            self.cri_ssim = None
 
         if self.cri_pix is None and self.cri_perceptual is None:
             raise ValueError('Both pixel and perceptual losses are None.')
@@ -149,6 +156,16 @@ class SRModel(BaseModel):
             if 'gt' in visuals:
                 gt_img = tensor2img([visuals['gt']])
                 del self.gt
+            
+            if self.opt['gray_mode']:
+                sr_img = sr_img.reshape(sr_img.shape[0], sr_img.shape[1], 1)
+                img_rgb = cv2.imread(val_data['lq_path'][0])
+                # convert to YCrCb (cv2 reads images in BGR!), and normalize
+                img_ycc = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2YCrCb)
+                # only work on the luminance channel Y
+                Cr = np.expand_dims(cv2.resize(img_ycc[:,:,1], None, fx=self.opt['scale'], fy=self.opt['scale'], interpolation=cv2.INTER_CUBIC), axis=2)
+                Cb = np.expand_dims(cv2.resize(img_ycc[:,:,2], None, fx=self.opt['scale'], fy=self.opt['scale'], interpolation=cv2.INTER_CUBIC), axis=2)
+                sr_img = (cv2.cvtColor(np.concatenate((sr_img, Cr, Cb), axis=2), cv2.COLOR_YCrCb2BGR))
 
             # tentative for out of GPU memory
             del self.lq

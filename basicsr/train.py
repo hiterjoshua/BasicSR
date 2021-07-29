@@ -93,19 +93,19 @@ def train_pipeline(root_path):
     opt = parse_options(root_path, is_train=True)
     opt['root_path'] = root_path
 
+    # load resume states if necessary
+    resume_state = load_resume_state(opt)
+    # mkdir for experiments and logger, this function should performed before get_root_logger
+    if resume_state is None:
+        make_exp_dirs(opt)
+        if opt['logger'].get('use_tb_logger') and 'debug' not in opt['name'] and opt['rank'] == 0:
+            mkdir_and_rename(osp.join(opt['root_path'], 'tb_logger', opt['name']))
+
     log_file = osp.join(opt['path']['log'], f"train_{opt['name']}_{get_time_str()}.log")
     logger = get_root_logger(logger_name='basicsr', log_level=logging.INFO, log_file=log_file)
 
     torch.backends.cudnn.benchmark = True
     # torch.backends.cudnn.deterministic = True
-
-    # load resume states if necessary
-    resume_state = load_resume_state(opt)
-    # mkdir for experiments and logger
-    if resume_state is None:
-        make_exp_dirs(opt)
-        if opt['logger'].get('use_tb_logger') and 'debug' not in opt['name'] and opt['rank'] == 0:
-            mkdir_and_rename(osp.join(opt['root_path'], 'tb_logger', opt['name']))
 
     logger.info(get_env_info())
     logger.info(dict2str(opt))
