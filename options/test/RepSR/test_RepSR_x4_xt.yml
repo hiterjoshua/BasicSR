@@ -1,5 +1,5 @@
 # general settings
-name: RepSR_x4_f256b32_Real3w
+name: RepSR_x4_f256b32_Real3w_xt
 model_type: SRModel
 scale: 4
 num_gpu: 1  # set num_gpu: 0 for cpu mode
@@ -43,11 +43,11 @@ network_g:
   res_scale: 0.1
   img_range: 255.
   rgb_mean: [0.4488, 0.4371, 0.4040]
-  xt_flag: false
+  xt_flag: true
 
 # path
 path:
-  pretrain_network_g: experiments/RepSR_x4_f256b32_Real3w/models/net_g_300000.pth
+  pretrain_network_g: experiments/RepSR_x4_f256b32_Real3w_xt/models/net_g_300000.pth
   strict_load_g: false
   resume_state: ~
   models: /data1/hukunlei/torch-code/BasicSR/RepSR
@@ -56,7 +56,7 @@ path:
 val:
   val_freq: !!float 5e3
   save_img: true #false
-  suffix: origin
+  suffix: xt
 
   # metrics:
   #   psnr: # metric name, can be arbitrary
