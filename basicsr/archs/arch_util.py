@@ -104,17 +104,81 @@ class RBRepSR(nn.Module):
     def __init__(self, num_feat=64, res_scale=1, pytorch_init=False):
         super(RBRepSR, self).__init__()
         self.res_scale = res_scale
-        self.conv1 = nn.Conv2d(num_feat, num_feat, 3, 1, 1, bias=True)
-        self.conv2 = nn.Conv2d(num_feat, num_feat, 3, 1, 1, bias=True)
+        self.conv3x3_1 = nn.Conv2d(num_feat, num_feat, 3, 1, 1, bias=True)
+        self.conv3x3_2 = nn.Conv2d(num_feat, num_feat, 3, 1, 1, bias=True)
         #self.relu = nn.ReLU(inplace=True)
 
         if not pytorch_init:
-            default_init_weights([self.conv1, self.conv2], 0.1)
+            default_init_weights([self.conv3x3_1, self.conv3x3_2], 0.1)
 
     def forward(self, x):
         identity = x
-        out = self.conv2(self.conv1(x))
+        out = self.conv3x3_2(self.conv3x3_1(x))
         return identity + out * self.res_scale
+
+class RBRepSR_three(nn.Module):
+    """Residual block without BN, without relu
+
+    It has a style of:
+        -----Conv3----Conv3----Conv3-----+-
+         |_______________________________|
+
+    Args:
+        num_feat (int): Channel number of intermediate features.
+            Default: 64.
+        res_scale (float): Residual scale. Default: 1.
+        pytorch_init (bool): If set to True, use pytorch default init,
+            otherwise, use default_init_weights. Default: False.
+    """
+
+    def __init__(self, num_feat=64, res_scale=1, pytorch_init=False, deploy=False):
+        super(RBRepSR_three, self).__init__()
+        self.res_scale = res_scale
+        self.deploy = deploy
+        self.num_feat = num_feat
+
+        if self.deploy:
+            self.rbr_reparam = nn.Conv2d(num_feat, num_feat, 3, 1, 1, bias=True)
+        else:
+            self.conv3x3_1 = nn.Conv2d(num_feat, num_feat, 3, 1, 1, bias=True)
+            self.conv3x3_2 = nn.Conv2d(num_feat, num_feat, 3, 1, 1, bias=True)
+            self.conv3x3_3 = nn.Conv2d(num_feat, num_feat, 3, 1, 1, bias=True)
+            #self.relu = nn.ReLU(inplace=True)
+
+            if not pytorch_init:
+                default_init_weights([self.conv3x3_1, self.conv3x3_2], 0.1)
+
+    def forward(self, x):
+        if hasattr(self, 'rbr_reparam'):
+            return self.rbr_reparam(x)
+        else:
+            identity = x
+            out = self.conv3x3_3(self.conv3x3_2(self.conv3x3_1(x)))
+            return identity + out * self.res_scale
+
+    def get_equivalent_kernel_bias(self):
+        kernel3x3_1, bias3x3_1 = self.conv3x3_1.weight.data.clone(), self.conv3x3_1.bias.data.clone()
+        kernel3x3_2, bias3x3_2 = self.conv3x3_2.weight.data.clone(), self.conv3x3_2.bias.data.clone()
+        kernel3x3_3, bias3x3_3 = self.conv3x3_3.weight.data.clone(), self.conv3x3_3.bias.data.clone()
+
+        kernel_identity = torch.zeros((self.num_feat, self.num_feat, 3, 3))
+        for i in range(self.num_feat):
+    	    kernel_identity[i, i, 1, 1] = 1
+
+        return kernel3x3_3*kernel3x3_2*kernel3x3_1+kernel_identity, \
+            kernel3x3_3*kernel3x3_2*bias3x3_1 + kernel3x3_3*bias3x3_2 + bias3x3_3
+
+    def switch_to_deploy(self):
+        if hasattr(self, 'rbr_reparam'):
+            return
+        kernel, bias = self.get_equivalent_kernel_bias()
+        self.rbr_reparam = nn.Conv2d(in_channels=self.conv3x3_1.in_channels, out_channels=self.conv3x3_3.out_channels,
+                                     kernel_size=self.conv3x3_1.kernel_size, stride=self.conv3x3_1.stride,
+                                     padding=self.conv3x3_1.padding, bias=True)
+        self.rbr_reparam.weight.data = kernel
+        self.rbr_reparam.bias.data = bias
+        for para in self.parameters():
+            para.detach_()
 
 class RBRepSR_xt(nn.Module):
     """Residual block without BN, without relu
@@ -131,21 +195,76 @@ class RBRepSR_xt(nn.Module):
             otherwise, use default_init_weights. Default: False.
     """
 
-    def __init__(self, num_feat=64, inside_feat=256, res_scale=1, pytorch_init=False):
+    def __init__(self, num_feat=64, inside_feat=256, res_scale=1, pytorch_init=False, deploy_flag=False):
         super(RBRepSR_xt, self).__init__()
         self.res_scale = res_scale
-        self.conv1 = nn.Conv2d(num_feat, inside_feat, 1, 1,0, bias=True)
-        self.conv2 = nn.Conv2d(inside_feat, inside_feat, 3, 1, 1, bias=True)
-        self.conv3 = nn.Conv2d(inside_feat, num_feat, 1, 1, 0, bias=True)
-        #self.relu = nn.ReLU(inplace=True)
+        self.deploy = deploy_flag
+        self.num_feat = num_feat
 
-        if not pytorch_init:
-            default_init_weights([self.conv1, self.conv2, self.conv3], 0.1)
+        if self.deploy:
+            self.rbr_reparam = nn.Conv2d(num_feat, num_feat, 3, 1, 1, bias=True)
+        else:
+            self.conv1x1_1 = nn.Conv2d(num_feat, inside_feat, 1, 1,0, bias=True)
+            self.conv3x3_1 = nn.Conv2d(inside_feat, inside_feat, 3, 1, 1, bias=True)
+            self.conv1x1_2 = nn.Conv2d(inside_feat, num_feat, 1, 1, 0, bias=True)
+            #self.relu = nn.ReLU(inplace=True)
+
+            if not pytorch_init:
+                default_init_weights([self.conv1x1_1, self.conv3x3_1, self.conv1x1_2], 0.1)
 
     def forward(self, x):
-        identity = x
-        out = self.conv3(self.conv2(self.conv1(x)))
-        return identity + out * self.res_scale
+        if hasattr(self, 'rbr_reparam'):
+            return self.rbr_reparam(x)
+        else:
+            identity = x
+            out = self.conv1x1_2(self.conv3x3_1(self.conv1x1_1(x)))
+            return identity + out * self.res_scale
+
+    def get_equivalent_kernel_bias(self):
+        kernel1x1_1, bias1x1_1 = self.conv1x1_1.weight.data.clone(), self.conv1x1_1.bias.data.clone()
+        kernel3x3_1, bias3x3_1 = self.conv3x3_1.weight.data.clone(), self.conv3x3_1.bias.data.clone()
+        kernel1x1_2, bias1x1_2 = self.conv1x1_2.weight.data.clone(), self.conv1x1_2.bias.data.clone()
+
+        kernel_identity = torch.zeros((self.num_feat, self.num_feat, 3, 3))
+        for i in range(self.num_feat):
+    	    kernel_identity[i, i, 1, 1] = 0
+
+        fused = torch.nn.Conv2d(
+            self.conv1x1_1.in_channels,
+            self.conv3x3_1.out_channels,
+            kernel_size=self.conv3x3_1.kernel_size,
+            stride=self.conv3x3_1.stride,
+            padding=self.conv3x3_1.padding,
+            bias=True
+        )
+        for i in range(kernel3x3_1.shape[0]):
+            fused.weight.data[i,...] = torch.sum(kernel1x1_1 * kernel3x3_1[i,...].unsqueeze(1), dim=0)
+            fused.bias.data[i] = bias3x3_1[i] + torch.sum(bias1x1_1.unsqueeze(1).unsqueeze(1) * kernel3x3_1[i,...])
+        
+        fused_ = torch.nn.Conv2d(
+            fused.in_channels,
+            self.conv1x1_2.out_channels,
+            kernel_size=fused.kernel_size,
+            stride=fused.stride,
+            padding=fused.padding,
+            bias=True
+        )
+        for i in range(kernel1x1_2.shape[0]):
+            fused_.weight.data[i,...] = torch.sum(fused.weight.data * kernel1x1_2[i,...].unsqueeze(1), dim=0)
+            fused_.bias.data[i] = bias1x1_2[i] + torch.sum(fused.bias.data * kernel1x1_2[i,...].squeeze(1).squeeze(1))
+        fused_.weight.data =  kernel_identity #fused_.weight.data +
+        fused_.bias.data = fused_.bias.data
+        return fused_
+
+    def switch_to_deploy(self):
+        if hasattr(self, 'rbr_reparam'):
+            return
+        layer = self.get_equivalent_kernel_bias()
+        self.rbr_reparam = layer
+        for para in self.parameters():
+            para.detach_()
+        return layer
+
 
 class Upsample(nn.Sequential):
     """Upsample module.

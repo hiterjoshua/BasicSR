@@ -1,13 +1,13 @@
 import torch
 from torch import nn as nn
 
-from basicsr.archs.arch_util import RBRepSR, RBRepSR_xt, Upsample, make_layer
+from basicsr.archs.arch_util import RBRepSR, RBRepSR_xt, RBRepSR_three, Upsample, make_layer
 from basicsr.utils.registry import ARCH_REGISTRY
 
 
 @ARCH_REGISTRY.register()
 class RepSR(nn.Module):
-    """EDSR network structure.
+    """RepSR network structure.
 
     Args:
         num_in_ch (int): Channel number of inputs.
@@ -22,6 +22,8 @@ class RepSR(nn.Module):
         img_range (float): Image range. Default: 255.
         rgb_mean (tuple[float]): Image mean in RGB orders.
             Default: (0.4488, 0.4371, 0.4040), calculated from DIV2K dataset.
+        xt_flag: use res xt structure or not, xt structure is better
+        three_flag: waiting verify
     """
 
     def __init__(self,
@@ -34,7 +36,9 @@ class RepSR(nn.Module):
                  res_scale=1,
                  img_range=255.,
                  rgb_mean=(0.4488, 0.4371, 0.4040),
-                 xt_flag=True):
+                 xt_flag=False,
+                 three_flag=False,
+                 deploy_flag=False):
         super(RepSR, self).__init__()
 
         self.img_range = img_range
@@ -44,7 +48,10 @@ class RepSR(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         
         if xt_flag:
-            self.body = make_layer(RBRepSR_xt, num_block, num_feat=num_feat, inside_feat=inside_feat, res_scale=res_scale, pytorch_init=True)
+            self.body = make_layer(RBRepSR_xt, num_block, num_feat=num_feat, inside_feat=inside_feat, \
+                res_scale=res_scale, pytorch_init=True, deploy_flag=deploy_flag)
+        elif three_flag:
+            self.body = make_layer(RBRepSR_three, num_block, num_feat=num_feat, res_scale=res_scale, pytorch_init=True)
         else:
             self.body = make_layer(RBRepSR, num_block, num_feat=num_feat, res_scale=res_scale, pytorch_init=True)
 

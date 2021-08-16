@@ -2,6 +2,7 @@ import torch
 from collections import OrderedDict
 from os import path as osp
 from tqdm import tqdm
+import copy
 
 from basicsr.archs import build_network
 from basicsr.losses import build_loss
@@ -22,7 +23,7 @@ class SRModel(BaseModel):
 
         # define network
         self.net_g = build_network(opt['network_g'])
-        self.net_g = self.model_to_device(self.net_g)
+        #self.net_g = self.model_to_device(self.net_g)
         self.print_network(self.net_g)
 
         # load pretrained models
@@ -32,6 +33,29 @@ class SRModel(BaseModel):
 
         if self.is_train:
             self.init_training_settings()
+
+        # reprameter network
+        convert_flag = self.opt['convert_flag']
+        if convert_flag:
+            save_path = self.opt['path'].get('reparameter_network_g', None)
+            self.net_g = self.model_convert(self.net_g, save_path, convert_flag)
+
+        self.net_g = self.model_to_device(self.net_g)
+        self.print_network(self.net_g)
+
+    # add by hukunlei, for model reparameterization
+    def model_convert(self, model, save_path, convert_flag, do_copy=False):
+        if do_copy:
+            model = copy.deepcopy(model)
+        part_num = 0
+        for module in model.body:
+            if hasattr(module, 'switch_to_deploy') and convert_flag:
+                module = module.switch_to_deploy()
+                model.body[part_num] = module
+                part_num += 2
+        if save_path is not None:
+            torch.save(model.state_dict(), save_path+'repra.pth')
+        return model
 
     def init_training_settings(self):
         self.net_g.train()
@@ -180,14 +204,14 @@ class SRModel(BaseModel):
             if save_img:
                 if self.opt['is_train']:
                     save_img_path = osp.join(self.opt['path']['visualization'], img_name,
-                                             f'{img_name}_{current_iter}.png')
+                                             f'{img_name}_{current_iter}.jpg')
                 else:
                     if self.opt['val']['suffix']:
                         save_img_path = osp.join(self.opt['path']['visualization'], dataset_name,
-                                                 f'{img_name}_{self.opt["val"]["suffix"]}.png')
+                                                 f'{img_name}_{self.opt["val"]["suffix"]}.jpg')
                     else:
                         save_img_path = osp.join(self.opt['path']['visualization'], dataset_name,
-                                                 f'{img_name}_{self.opt["name"]}.png')
+                                                 f'{img_name}_{self.opt["name"]}.jpg')
                 imwrite(sr_img, save_img_path)
 
             if with_metrics:

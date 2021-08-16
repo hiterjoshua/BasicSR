@@ -1,0 +1,1 @@
+CUDA_VISIBLE_DEVICES=6,7 python basicsr/deploy.py -opt options/deploy/RepSR/deploy_RepSR_x4_xt.yml
