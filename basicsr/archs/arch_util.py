@@ -263,8 +263,10 @@ class RBRepSR_xt(nn.Module):
         self.rbr_reparam = layer
         for para in self.parameters():
             para.detach_()
-        return layer
-
+        self.__delattr__('conv1x1_1')
+        self.__delattr__('conv3x3_1')
+        self.__delattr__('conv1x1_2')
+        
 
 class Upsample(nn.Sequential):
     """Upsample module.

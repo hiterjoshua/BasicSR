@@ -37,24 +37,18 @@ class SRModel(BaseModel):
         # reprameter network
         convert_flag = self.opt['convert_flag']
         if convert_flag:
-            save_path = self.opt['path'].get('reparameter_network_g', None)
-            self.net_g = self.model_convert(self.net_g, save_path, convert_flag)
+            self.net_g = self.model_convert(self.net_g, convert_flag)
+            self.print_network(self.net_g)
 
         self.net_g = self.model_to_device(self.net_g)
-        self.print_network(self.net_g)
 
     # add by hukunlei, for model reparameterization
-    def model_convert(self, model, save_path, convert_flag, do_copy=False):
+    def model_convert(self, model, convert_flag, do_copy=False):
         if do_copy:
             model = copy.deepcopy(model)
-        part_num = 0
         for module in model.body:
             if hasattr(module, 'switch_to_deploy') and convert_flag:
-                module = module.switch_to_deploy()
-                model.body[part_num] = module
-                part_num += 2
-        if save_path is not None:
-            torch.save(model.state_dict(), save_path+'repra.pth')
+                module.switch_to_deploy()
         return model
 
     def init_training_settings(self):
@@ -253,3 +247,9 @@ class SRModel(BaseModel):
         else:
             self.save_network(self.net_g, 'net_g', current_iter)
         self.save_training_state(epoch, current_iter)
+
+    def save_reparam(self, reparam_name):
+        if hasattr(self, 'net_g_ema'):
+            self.save_network([self.net_g, self.net_g_ema], 'net_g', reparam_name, param_key=['params', 'params_ema'])
+        else:
+            self.save_network(self.net_g, 'net_g', reparam_name)

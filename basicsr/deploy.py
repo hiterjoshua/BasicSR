@@ -33,7 +33,11 @@ def test_pipeline(root_path):
 
     # create model
     model = build_model(opt)
-    
+    if opt['convert_flag']:
+        save_path = opt['path'].get('pretrain_network_g', None)
+        reparam_name = save_path.split('/')[-1].split('.')[0].split('_')[-1] + '_reparam'
+        if reparam_name is not None:
+            model.save_reparam(reparam_name)
 
     for test_loader in test_loaders:
         test_set_name = test_loader.dataset.opt['name']
