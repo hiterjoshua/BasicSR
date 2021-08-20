@@ -1,5 +1,5 @@
 # general settings
-name: RepSR_x4_f256b32_Real3w_xt
+name: RepSR_x4_f256b32_Real3w_three
 model_type: SRModel
 scale: 4
 num_gpu: 1  # set num_gpu: 0 for cpu mode
@@ -29,22 +29,22 @@ network_g:
   res_scale: 0.1
   img_range: 255.
   rgb_mean: [0.4488, 0.4371, 0.4040]
-  xt_flag: true
+  three_flag: true
   deploy_flag: false
 
 # path
 path:
-  pretrain_network_g: experiments/RepSR_x4_f256b32_Real3w_xt/models/net_g_30000.pth
-  #pretrain_network_g: experiments/RepSR_x4_f256b32_Real3w_xt/reparam/net_g_30000_reparam.pth
+  pretrain_network_g: experiments/RepSR_x4_f256b32_Real3w_three/models/net_g_300000.pth
+  #pretrain_network_g: experiments/RepSR_x4_f256b32_Real3w_three/reparam/net_g_300000_reparam.pth
   strict_load_g: false
   resume_state: ~
-  models: experiments/RepSR_x4_f256b32_Real3w_xt/reparam/
+  models: experiments/RepSR_x4_f256b32_Real3w_three/reparam/
 
 # validation settings
 val:
   val_freq: !!float 5e3
   save_img: true #false
-  suffix: xt
+  suffix: three
 
   # metrics:
   #   psnr: # metric name, can be arbitrary

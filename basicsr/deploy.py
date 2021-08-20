@@ -33,6 +33,32 @@ def test_pipeline(root_path):
 
     # create model
     model = build_model(opt)
+
+    from basicsr.utils.reparameter import reparameter_13, reparameter_31, reparameter_33
+    model_linear = torch.nn.Sequential(
+    model.net_g.body[0].conv1x1_1,
+    model.net_g.body[0].conv3x3_1,
+    model.net_g.body[0].conv1x1_2
+    )
+    input = torch.randn(1, 64, 256, 256).cuda()
+    fused = reparameter_13(model_linear[0], model_linear[1])
+    fused_ = reparameter_31(fused, model_linear[2])
+    f2 = fused_.forward(input)
+
+    f1 = model_linear.forward(input)
+
+    d = (f1 - f2).sum().item()
+    print("error ddd:",d)
+
+
+
+
+
+
+
+
+
+
     if opt['convert_flag']:
         save_path = opt['path'].get('pretrain_network_g', None)
         reparam_name = save_path.split('/')[-1].split('.')[0].split('_')[-1] + '_reparam'

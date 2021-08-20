@@ -1,7 +1,8 @@
 # :rocket: BasicSR-RepSR
 
-2020.07: add RepSR network
-2020.08: add collapse function and deploy operation, all the code finished and tested
+2021.07: add RepSR network
+
+2021.08: add collapse function and deploy operation, all the code finished and tested
 
 ## :Deployment: Step by Step
 set the convert_flag: true and deploy_flag: false in the deploy yaml, and run the deploy.sh, you would find the converted model in reparam folder.

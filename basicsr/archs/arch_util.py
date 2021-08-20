@@ -5,8 +5,7 @@ from torch.nn import functional as F
 from torch.nn import init as init
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from basicsr.utils import get_root_logger
-
+from basicsr.utils.reparameter import reparameter_13, reparameter_31, reparameter_33
 
 @torch.no_grad()
 def default_init_weights(module_list, scale=1, bias_fill=0, **kwargs):
@@ -157,28 +156,25 @@ class RBRepSR_three(nn.Module):
             return identity + out * self.res_scale
 
     def get_equivalent_kernel_bias(self):
-        kernel3x3_1, bias3x3_1 = self.conv3x3_1.weight.data.clone(), self.conv3x3_1.bias.data.clone()
-        kernel3x3_2, bias3x3_2 = self.conv3x3_2.weight.data.clone(), self.conv3x3_2.bias.data.clone()
-        kernel3x3_3, bias3x3_3 = self.conv3x3_3.weight.data.clone(), self.conv3x3_3.bias.data.clone()
-
+        fused_midpart = reparameter_33(self.conv3x3_1, self.conv3x3_2)
+        fused = reparameter_33(fused_midpart, self.conv3x3_3)
         kernel_identity = torch.zeros((self.num_feat, self.num_feat, 3, 3))
         for i in range(self.num_feat):
     	    kernel_identity[i, i, 1, 1] = 1
-
-        return kernel3x3_3*kernel3x3_2*kernel3x3_1+kernel_identity, \
-            kernel3x3_3*kernel3x3_2*bias3x3_1 + kernel3x3_3*bias3x3_2 + bias3x3_3
+        fused.weight.data = fused.weight.data + kernel_identity
+        return fused
 
     def switch_to_deploy(self):
         if hasattr(self, 'rbr_reparam'):
             return
-        kernel, bias = self.get_equivalent_kernel_bias()
-        self.rbr_reparam = nn.Conv2d(in_channels=self.conv3x3_1.in_channels, out_channels=self.conv3x3_3.out_channels,
-                                     kernel_size=self.conv3x3_1.kernel_size, stride=self.conv3x3_1.stride,
-                                     padding=self.conv3x3_1.padding, bias=True)
-        self.rbr_reparam.weight.data = kernel
-        self.rbr_reparam.bias.data = bias
+        layer = self.get_equivalent_kernel_bias()
+        self.rbr_reparam = layer
         for para in self.parameters():
             para.detach_()
+        self.__delattr__('conv3x3_1')
+        self.__delattr__('conv3x3_2')
+        self.__delattr__('conv3x3_3')
+
 
 class RBRepSR_xt(nn.Module):
     """Residual block without BN, without relu
@@ -204,10 +200,9 @@ class RBRepSR_xt(nn.Module):
         if self.deploy:
             self.rbr_reparam = nn.Conv2d(num_feat, num_feat, 3, 1, 1, bias=True)
         else:
-            self.conv1x1_1 = nn.Conv2d(num_feat, inside_feat, 1, 1,0, bias=True)
+            self.conv1x1_1 = nn.Conv2d(num_feat, inside_feat, 1, 1, 0, bias=True)
             self.conv3x3_1 = nn.Conv2d(inside_feat, inside_feat, 3, 1, 1, bias=True)
             self.conv1x1_2 = nn.Conv2d(inside_feat, num_feat, 1, 1, 0, bias=True)
-            #self.relu = nn.ReLU(inplace=True)
 
             if not pytorch_init:
                 default_init_weights([self.conv1x1_1, self.conv3x3_1, self.conv1x1_2], 0.1)
@@ -221,40 +216,13 @@ class RBRepSR_xt(nn.Module):
             return identity + out * self.res_scale
 
     def get_equivalent_kernel_bias(self):
-        kernel1x1_1, bias1x1_1 = self.conv1x1_1.weight.data.clone(), self.conv1x1_1.bias.data.clone()
-        kernel3x3_1, bias3x3_1 = self.conv3x3_1.weight.data.clone(), self.conv3x3_1.bias.data.clone()
-        kernel1x1_2, bias1x1_2 = self.conv1x1_2.weight.data.clone(), self.conv1x1_2.bias.data.clone()
-
+        fused_midpart = reparameter_13(self.conv1x1_1, self.conv3x3_1)
+        fused = reparameter_31(fused_midpart, self.conv1x1_2)
         kernel_identity = torch.zeros((self.num_feat, self.num_feat, 3, 3))
         for i in range(self.num_feat):
-    	    kernel_identity[i, i, 1, 1] = 0
-
-        fused = torch.nn.Conv2d(
-            self.conv1x1_1.in_channels,
-            self.conv3x3_1.out_channels,
-            kernel_size=self.conv3x3_1.kernel_size,
-            stride=self.conv3x3_1.stride,
-            padding=self.conv3x3_1.padding,
-            bias=True
-        )
-        for i in range(kernel3x3_1.shape[0]):
-            fused.weight.data[i,...] = torch.sum(kernel1x1_1 * kernel3x3_1[i,...].unsqueeze(1), dim=0)
-            fused.bias.data[i] = bias3x3_1[i] + torch.sum(bias1x1_1.unsqueeze(1).unsqueeze(1) * kernel3x3_1[i,...])
-        
-        fused_ = torch.nn.Conv2d(
-            fused.in_channels,
-            self.conv1x1_2.out_channels,
-            kernel_size=fused.kernel_size,
-            stride=fused.stride,
-            padding=fused.padding,
-            bias=True
-        )
-        for i in range(kernel1x1_2.shape[0]):
-            fused_.weight.data[i,...] = torch.sum(fused.weight.data * kernel1x1_2[i,...].unsqueeze(1), dim=0)
-            fused_.bias.data[i] = bias1x1_2[i] + torch.sum(fused.bias.data * kernel1x1_2[i,...].squeeze(1).squeeze(1))
-        fused_.weight.data =  kernel_identity #fused_.weight.data +
-        fused_.bias.data = fused_.bias.data
-        return fused_
+    	    kernel_identity[i, i, 1, 1] = 1
+        fused.weight.data = fused.weight.data + kernel_identity
+        return fused
 
     def switch_to_deploy(self):
         if hasattr(self, 'rbr_reparam'):
