@@ -129,7 +129,7 @@ def reparameter_33(s_1, s_2):
         s_2.out_channels,
         kernel_size=s_2.kernel_size,
         stride=s_2.stride,
-        padding=s_2.padding,
+        padding=1,
         bias=True
     )
 
@@ -145,8 +145,8 @@ def reparameter_33(s_1, s_2):
 
     new_weight = F.conv_transpose2d(w_s_2, w_s_1)
 
-    fused.weight.data = new_weight.cuda()
-    fused.bias.data = new_bias.cuda()
+    fused.weight.data = new_weight
+    fused.bias.data = new_bias
     return fused
 
 

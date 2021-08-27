@@ -1,5 +1,7 @@
 import logging
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 from os import path as osp
 
 from basicsr.data import build_dataloader, build_dataset
@@ -7,6 +9,40 @@ from basicsr.models import build_model
 from basicsr.utils import get_env_info, get_root_logger, get_time_str, make_exp_dirs
 from basicsr.utils.options import dict2str, parse_options
 
+def compute_ck(s_1, s_2):
+    """
+    Compute weight from 2 conv layers, whose kernel size larger than 3*3
+    After derivation, F.conv_transpose2d can be used to compute weight of original conv layer
+    :param s_1: 3*3 or larger conv layer
+    :param s_2: 3*3 or larger conv layer
+    :return: new weight and bias
+    """
+    if isinstance(s_1, nn.Conv2d):
+        w_s_1 = s_1.weight  # output# * input# * kernel * kernel
+        b_s_1 = s_1.bias
+    else:
+        w_s_1 = s_1['weight']
+        b_s_1 = s_1['bias']
+    if isinstance(s_2, nn.Conv2d):
+        w_s_2 = s_2.weight
+        b_s_2 = s_2.bias
+    else:
+        w_s_2 = s_2['weight']
+        b_s_2 = s_2['bias']
+
+    w_s_2_tmp = w_s_2.view(w_s_2.size(0), w_s_2.size(1), w_s_2.size(2) * w_s_2.size(3))
+
+    if b_s_1 is not None and b_s_2 is not None:
+        b_sum = torch.sum(w_s_2_tmp, dim=2)
+        new_bias = torch.matmul(b_sum, b_s_1) + b_s_2
+    elif b_s_1 is None and b_s_2 is not None:
+        new_bias = b_s_2  #without Bias
+    else:
+        new_bias = torch.zeros(s_2.weight.size(0))
+
+    new_weight = F.conv_transpose2d(w_s_2, w_s_1)
+
+    return {'weight': new_weight, 'bias': new_bias}
 
 def test_pipeline(root_path):
     # parse options, set distributed setting, set ramdom seed
@@ -31,45 +67,57 @@ def test_pipeline(root_path):
         logger.info(f"Number of test images in {dataset_opt['name']}: {len(test_set)}")
         test_loaders.append(test_loader)
 
-    # create model
-    model = build_model(opt)
+        # create model
+        model = build_model(opt)
+        if opt['convert_flag']:
+            save_path = opt['path'].get('pretrain_network_g', None)
+            reparam_name = save_path.split('/')[-1].split('.')[0].split('_')[-1] + '_reparam'
+            if reparam_name is not None:
+                model.save_reparam(reparam_name)
 
-    from basicsr.utils.reparameter import reparameter_13, reparameter_31, reparameter_33
-    model_linear = torch.nn.Sequential(
-    model.net_g.body[0].conv1x1_1,
-    model.net_g.body[0].conv3x3_1,
-    model.net_g.body[0].conv1x1_2
-    )
-    input = torch.randn(1, 64, 256, 256).cuda()
-    fused = reparameter_13(model_linear[0], model_linear[1])
-    fused_ = reparameter_31(fused, model_linear[2])
-    f2 = fused_.forward(input)
+        for test_loader in test_loaders:
+            test_set_name = test_loader.dataset.opt['name']
+            logger.info(f'Testing {test_set_name}...')
+            model.validation(test_loader, current_iter=opt['name'], tb_logger=None, save_img=opt['val']['save_img'])
 
-    f1 = model_linear.forward(input)
+        # validation
+        if not opt['convert_flag']:
+            model_linear = torch.nn.Sequential(
+                nn.ZeroPad2d(3),
+                model.net_g.body[0].conv3x3_1,
+                model.net_g.body[0].conv3x3_3,
+                model.net_g.body[0].conv3x3_3
+            )
+            input = torch.randn(1, 64, 256, 256).cuda()
+            f1 = model_linear.forward(input) + input
 
-    d = (f1 - f2).sum().item()
-    print("error ddd:",d)
+            from basicsr.utils.reparameter import reparameter_13, reparameter_31, reparameter_33
+            fused = torch.nn.Conv2d(
+                model.net_g.body[0].conv3x3_1.in_channels,
+                model.net_g.body[0].conv3x3_2.out_channels,
+                kernel_size=7,
+                stride=1,
+                padding=7//2,
+                bias=True
+            )
+            res = compute_ck(model_linear[1], model_linear[2])
+            res = compute_ck(res, model_linear[3])
+            kernel_identity = torch.zeros((64, 64, 7, 7))
+            for i in range(64):
+                kernel_identity[i, i, 3, 3] = 1
+            fused.weight.data = res['weight'] + kernel_identity.cuda()
+            fused.bias.data = res['bias']
+            f2 = fused.forward(input)
+            d = torch.mean(torch.abs(f1 - f2))
+            print("error:",d)
 
-
-
-
-
-
-
-
-
-
-    if opt['convert_flag']:
-        save_path = opt['path'].get('pretrain_network_g', None)
-        reparam_name = save_path.split('/')[-1].split('.')[0].split('_')[-1] + '_reparam'
-        if reparam_name is not None:
-            model.save_reparam(reparam_name)
-
-    for test_loader in test_loaders:
-        test_set_name = test_loader.dataset.opt['name']
-        logger.info(f'Testing {test_set_name}...')
-        model.validation(test_loader, current_iter=opt['name'], tb_logger=None, save_img=opt['val']['save_img'])
-
+            m =  nn.ZeroPad2d(3)
+            m1 = model.net_g.body[0].conv3x3_1
+            m2 = model.net_g.body[0].conv3x3_3
+            m3 = model.net_g.body[0].conv3x3_3
+            f3 = m3(m2(m1(m(input))))+input
+            d = torch.mean(torch.abs(f3 - f2))
+            print("error no sequential:",d)
 
 if __name__ == '__main__':
     root_path = osp.abspath(osp.join(__file__, osp.pardir, osp.pardir))

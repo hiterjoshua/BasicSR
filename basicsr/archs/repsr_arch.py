@@ -51,7 +51,8 @@ class RepSR(nn.Module):
             self.body = make_layer(RBRepSR_xt, num_block, num_feat=num_feat, inside_feat=inside_feat, \
                 res_scale=res_scale, pytorch_init=True, deploy_flag=deploy_flag)
         elif three_flag:
-            self.body = make_layer(RBRepSR_three, num_block, num_feat=num_feat, res_scale=res_scale, pytorch_init=True)
+            self.body = make_layer(RBRepSR_three, num_block, num_feat=num_feat, res_scale=res_scale,\
+                 pytorch_init=True, deploy_flag=deploy_flag)
         else:
             self.body = make_layer(RBRepSR, num_block, num_feat=num_feat, res_scale=res_scale, pytorch_init=True)
 

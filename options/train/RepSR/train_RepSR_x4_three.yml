@@ -4,6 +4,7 @@ model_type: SRModel
 scale: 4
 num_gpu: 1  # set num_gpu: 0 for cpu mode
 manual_seed: 10
+convert_flag: false
 
 # dataset and data loader settings
 datasets:
@@ -54,7 +55,7 @@ network_g:
   img_range: 255.
   rgb_mean: [0.4488, 0.4371, 0.4040]
   xt_flag: false
-  three_flag: true
+  three_flag: false
 
 # path
 path:
