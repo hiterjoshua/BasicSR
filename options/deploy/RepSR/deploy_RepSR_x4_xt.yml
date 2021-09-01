@@ -11,8 +11,8 @@ datasets:
   test_1:  # the 1st test dataset
     name: Real3w
     type: Real3wDataset
-    dataroot_gt: /data1/hukunlei/result/validation/one_test
-    dataroot_lq: /data1/hukunlei/result/validation/one_test
+    dataroot_gt: /data1/hukunlei/result/validation/d_realsr_3w/test_LR/ #/data1/hukunlei/result/validation/one_test
+    dataroot_lq: /data1/hukunlei/result/validation/d_realsr_3w/test_LR/ #/data1/hukunlei/result/validation/one_test
     io_backend:
       type: disk
     need_gt: false
@@ -22,20 +22,20 @@ network_g:
   type: RepSR
   num_in_ch: 1
   num_out_ch: 1
-  num_feat: 64
-  inside_feat: 256
-  num_block: 5
+  num_feat: 32
+  inside_feat: 64
+  num_block: 3
   upscale: 4
   res_scale: 0.1
   img_range: 255.
   rgb_mean: [0.4488, 0.4371, 0.4040]
   xt_flag: true
-  deploy_flag: false
+  deploy_flag: true
 
 # path
 path:
-  pretrain_network_g: experiments/RepSR_x4_f256b32_Real3w_xt/models/net_g_30000.pth
-  #pretrain_network_g: experiments/RepSR_x4_f256b32_Real3w_xt/reparam/net_g_30000_reparam.pth
+  #pretrain_network_g: experiments/RepSR_x4_f256b32_Real3w_xt/models/net_g_1000000.pth
+  pretrain_network_g: experiments/RepSR_x4_f256b32_Real3w_xt/reparam/net_g_1000000_reparam.pth
   strict_load_g: false
   resume_state: ~
   models: experiments/RepSR_x4_f256b32_Real3w_xt/reparam/

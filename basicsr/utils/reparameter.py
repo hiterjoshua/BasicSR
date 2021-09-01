@@ -49,8 +49,8 @@ def reparameter_13(s_1, s_2):
     else:
         new_bias = torch.zeros(s_2.weight.size(0))
 
-    fused.weight.data = new_weight.cuda()
-    fused.bias.data = new_bias.cuda()
+    fused.weight.data = new_weight
+    fused.bias.data = new_bias
     return fused
 
 
@@ -98,8 +98,8 @@ def reparameter_31(s_1, s_2):
     else:
         new_bias = torch.zeros(s_2.weight.size(0))
 
-    fused.weight.data = new_weight.cuda()
-    fused.bias.data = new_bias.cuda()
+    fused.weight.data = new_weight
+    fused.bias.data = new_bias
     return fused
 
 
@@ -188,6 +188,6 @@ def reparameter_fc(s_1, s_2):
 
     new_weight = torch.matmul(w_s_2, w_s_1)
 
-    fused.weight.data = new_weight.cuda()
-    fused.bias.data = new_bias.cuda()
+    fused.weight.data = new_weight
+    fused.bias.data = new_bias
     return fused

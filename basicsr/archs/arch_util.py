@@ -117,7 +117,6 @@ class RBRepSR(nn.Module):
 
 class RBRepSR_three(nn.Module):
     """Residual block without BN, without relu
-
     It has a style of:
         -----Conv3----Conv3----Conv3-----+-
          |_______________________________|
@@ -135,11 +134,12 @@ class RBRepSR_three(nn.Module):
         self.res_scale = res_scale
         self.deploy = deploy_flag
         self.num_feat = num_feat
+        self.kernal_size = 7
 
         if self.deploy:
-            self.rbr_reparam = nn.Conv2d(num_feat, num_feat, 7, 1, 7//2, bias=True)
+            self.rbr_reparam = nn.Conv2d(num_feat, num_feat, self.kernal_size, 1, self.kernal_size//2, bias=True)
         else:
-            self.padding = nn.ZeroPad2d(3)
+            self.padding = nn.ZeroPad2d(self.kernal_size//2)
             self.conv3x3_1 = nn.Conv2d(num_feat, num_feat, 3, 1, 0, bias=True)
             self.conv3x3_2 = nn.Conv2d(num_feat, num_feat, 3, 1, 0, bias=True)
             self.conv3x3_3 = nn.Conv2d(num_feat, num_feat, 3, 1, 0, bias=True)
@@ -159,10 +159,10 @@ class RBRepSR_three(nn.Module):
     def get_equivalent_kernel_bias(self):
         temp = reparameter_33(self.conv3x3_1, self.conv3x3_2)
         fused = reparameter_33(temp, self.conv3x3_3)
-        kernel_identity = torch.zeros((self.num_feat, self.num_feat, 7, 7))
+        kernel_identity = torch.zeros((self.num_feat, self.num_feat, self.kernal_size, self.kernal_size))
         for i in range(self.num_feat):
-    	    kernel_identity[i, i, 3, 3] = 1
-        self.rbr_reparam = nn.Conv2d(self.num_feat, self.num_feat, 7, 1, 7//2, bias=True)
+    	    kernel_identity[i, i, self.kernal_size//2, self.kernal_size//2] = 1
+        self.rbr_reparam = nn.Conv2d(self.num_feat, self.num_feat, self.kernal_size, 1, self.kernal_size//2, bias=True)
         self.rbr_reparam.weight.data = fused.weight.data * self.res_scale + kernel_identity
         self.rbr_reparam.bias.data = fused.bias.data * self.res_scale
 
@@ -177,13 +177,11 @@ class RBRepSR_three(nn.Module):
         self.__delattr__('conv3x3_2')
         self.__delattr__('conv3x3_3')
 
-
 class RBRepSR_xt(nn.Module):
     """Residual block without BN, without relu
-
     It has a style of:
-        -----Conv1----Conv3----Conv1----+-
-         |______________________________|
+        -----Conv1----Conv3---Conv3---Conv1----+-
+         |_____________________________________|
 
     Args:
         num_feat (int): Channel number of intermediate features.
@@ -198,43 +196,49 @@ class RBRepSR_xt(nn.Module):
         self.res_scale = res_scale
         self.deploy = deploy_flag
         self.num_feat = num_feat
+        self.kernal_size = 5
 
         if self.deploy:
-            self.rbr_reparam = nn.Conv2d(num_feat, num_feat, 3, 1, 1, bias=True)
+            self.rbr_reparam = nn.Conv2d(num_feat, num_feat, self.kernal_size, 1, self.kernal_size//2, bias=True)
         else:
+            self.padding = nn.ZeroPad2d(self.kernal_size//2)
             self.conv1x1_1 = nn.Conv2d(num_feat, inside_feat, 1, 1, 0, bias=True)
-            self.conv3x3_1 = nn.Conv2d(inside_feat, inside_feat, 3, 1, 1, bias=True)
+            self.conv3x3_1 = nn.Conv2d(inside_feat, inside_feat, 3, 1, 0, bias=True)
+            self.conv3x3_2 = nn.Conv2d(inside_feat, inside_feat, 3, 1, 0, bias=True)
             self.conv1x1_2 = nn.Conv2d(inside_feat, num_feat, 1, 1, 0, bias=True)
 
             if not pytorch_init:
-                default_init_weights([self.conv1x1_1, self.conv3x3_1, self.conv1x1_2], 0.1)
+                default_init_weights([self.conv1x1_1, self.conv3x3_1, self.conv3x3_2, self.conv1x1_2], 0.1)
 
     def forward(self, x):
         if hasattr(self, 'rbr_reparam'):
             return self.rbr_reparam(x)
         else:
             identity = x
-            out = self.conv1x1_2(self.conv3x3_1(self.conv1x1_1(x)))
+            out = self.conv1x1_2(self.conv3x3_2(self.conv3x3_1(self.conv1x1_1(self.padding(x)))))
             return identity + out * self.res_scale
 
     def get_equivalent_kernel_bias(self):
-        fused_midpart = reparameter_13(self.conv1x1_1, self.conv3x3_1)
-        fused = reparameter_31(fused_midpart, self.conv1x1_2)
-        kernel_identity = torch.zeros((self.num_feat, self.num_feat, 3, 3))
+        temp = reparameter_13(self.conv1x1_1, self.conv3x3_1)
+        temp = reparameter_33(temp, self.conv3x3_2)
+        fused = reparameter_31(temp, self.conv1x1_2)
+        kernel_identity = torch.zeros((self.num_feat, self.num_feat, self.kernal_size, self.kernal_size))
         for i in range(self.num_feat):
-    	    kernel_identity[i, i, 1, 1] = 1
-        fused.weight.data = fused.weight.data + kernel_identity
-        return fused
+    	    kernel_identity[i, i, self.kernal_size//2, self.kernal_size//2] = 1
+        self.rbr_reparam = nn.Conv2d(self.num_feat, self.num_feat, self.kernal_size, 1, self.kernal_size//2, bias=True)
+        self.rbr_reparam.weight.data = fused.weight.data * self.res_scale + kernel_identity
+        self.rbr_reparam.bias.data = fused.bias.data * self.res_scale
 
     def switch_to_deploy(self):
         if hasattr(self, 'rbr_reparam'):
             return
-        layer = self.get_equivalent_kernel_bias()
-        self.rbr_reparam = layer
+        self.get_equivalent_kernel_bias()
         for para in self.parameters():
             para.detach_()
+        self.__delattr__('padding')
         self.__delattr__('conv1x1_1')
         self.__delattr__('conv3x3_1')
+        self.__delattr__('conv3x3_2')
         self.__delattr__('conv1x1_2')
         
 
