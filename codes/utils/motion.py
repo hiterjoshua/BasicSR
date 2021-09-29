@@ -84,11 +84,15 @@ class STN(nn.Module):
         flow = torch.stack([_u, _v], dim=-1) * gain
         assert flow.shape == mesh.shape, f"Shape mis-match: {flow.shape} != {mesh.shape}"
         mesh = mesh + flow
+        # return F.grid_sample(inputs,
+        #                      mesh,
+        #                      mode=self.mode,
+        #                      padding_mode=self.padding_mode,
+        #                      align_corners=False)
         return F.grid_sample(inputs,
                              mesh,
                              mode=self.mode,
-                             padding_mode=self.padding_mode,
-                             align_corners=False)
+                             padding_mode=self.padding_mode)
 
 
 # class STTN(nn.Module):

@@ -5,6 +5,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torchvision.transforms.functional as tvs
+from torch.nn import functional as F
 
 
 class SOFVSRModel(BaseModel):
@@ -51,8 +52,10 @@ class SOFVSRModel(BaseModel):
 
         # infer
         hr_y_seq = self.net_G.infer_sequence(lr_y_seq, self.device)
-        hr_u_seq = tvs.resize(lr_u, [self.scale*h, self.scale*w], interpolation=3)    # bilinear:2(default) bicubic:3
-        hr_v_seq = tvs.resize(lr_v, [self.scale*h, self.scale*w], interpolation=3)    # bilinear:2(default) bicubic:3
+        # hr_u_seq = tvs.resize(lr_u, [self.scale*h, self.scale*w], interpolation=3)    # bilinear:2(default) bicubic:3
+        # hr_v_seq = tvs.resize(lr_v, [self.scale*h, self.scale*w], interpolation=3)    # bilinear:2(default) bicubic:3
+        hr_u_seq = F.interpolate(lr_u, size=(self.scale*h, self.scale*w), mode='bicubic')  
+        hr_v_seq = F.interpolate(lr_v, size=(self.scale*h, self.scale*w), mode='bicubic')  
 
         hr_yuv = torch.cat((hr_y_seq, hr_u_seq, hr_v_seq), dim=1)
         hr_yuv = hr_yuv.permute(0, 2, 3, 1)  # tchw
