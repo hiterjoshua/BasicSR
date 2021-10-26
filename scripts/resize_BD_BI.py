@@ -14,7 +14,7 @@ sigma = 1.5
 ksize = 1 + 2 * int(sigma * 3.0)
 # to be modified
 
-dataset = 'Gvt72'
+dataset = 'VimeoTecoGAN'
 degrade_mode = 'BD' # 'BD' or 'BI'
 
 n_process = 16  # the number of process to be used for downsampling

@@ -7,7 +7,7 @@
 # basic settings
 degradation=$1
 model=$2
-exp_id=001
+exp_id=002
 gpu_id=0
 
 
@@ -42,4 +42,4 @@ python ./codes/main.py \
   --model ${model} \
   --opt train${suffix}.yml \
   --gpu_id ${gpu_id} \
-  > ${exp_dir}/train/train${suffix}.log  2>&1 &
+  #> ${exp_dir}/train/train${suffix}.log  2>&1 &

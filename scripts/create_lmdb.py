@@ -115,7 +115,7 @@ def check_lmdb(dataset, lmdb_dir, display=True):
                 buf = txn.get(key.encode('ascii'))
                 val = np.frombuffer(buf, dtype=np.uint8).reshape(*sz) # HWC
 
-            visualize(key, val)
+            #visualize(key, val)
 
 
 if __name__ == '__main__':

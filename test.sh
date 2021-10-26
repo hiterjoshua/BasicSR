@@ -6,8 +6,8 @@
 # basic settings
 degradation=$1
 model=$2
-gpu_id=0
-exp_id=001
+gpu_id=3
+exp_id=002
 
 
 # run

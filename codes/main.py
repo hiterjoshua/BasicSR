@@ -14,6 +14,7 @@ from metrics.metric_calculator import MetricCalculator
 from metrics.model_summary import register, profile_model
 from utils import base_utils, data_utils
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "3,4"
 
 def train(opt):
     # logging

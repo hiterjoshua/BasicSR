@@ -163,3 +163,10 @@ This code is built on the following projects. We thank the authors for sharing t
 2. [BasicSR](https://github.com/xinntao/BasicSR)
 3. [VideoSuperResolution](https://github.com/LoSealL/VideoSuperResolution)
 4. [TecoGAN-PyTorch](https://github.com/skycrapers/TecoGAN-PyTorch)
+
+
+## Code usage
+1. DATA: When download the frames from Vimeo and Youtube datasets online, you would get the separated images as groundtruth data, and this file dataloader asked user to use lmdb format data. 
+scirpts/create_lmdb.py resize_BD_BI.py could be used for lmdb generation and lr transformation, but noticed that only hr lmdb demanded in this repo.
+2. Doing: change SRNet to smaller network, namned RepFrvsr network.
+3. TODO: FNet reparameterazation and lmdb change, input channel and output channel changed from 3 to 1, follow the more advanced style--YUV style.
