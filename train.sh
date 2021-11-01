@@ -7,7 +7,7 @@
 # basic settings
 degradation=$1
 model=$2
-exp_id=002
+exp_id=001
 gpu_id=0
 
 
@@ -36,6 +36,7 @@ cp -r ./codes ${exp_dir}/train/codes_backup${suffix}
 
 
 # run
+#python -m ipdb ./codes/main.py \
 python ./codes/main.py \
   --exp_dir ${exp_dir} \
   --mode train \

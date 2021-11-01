@@ -35,6 +35,16 @@ def define_generator(opt):
         from .sofvsr_nets import SOFNet
         net_G = SOFNet(scale=opt['scale'])
 
+    elif net_G_opt['name'].lower() == 'repvsr':  # efficient Reparameterazation-based generator
+        from .repvsr_nets import FRNet
+        net_G = FRNet(
+            in_nc=net_G_opt['in_nc'],
+            out_nc=net_G_opt['out_nc'],
+            nf=net_G_opt['nf'],
+            nb=net_G_opt['nb'],
+            degradation=opt['dataset']['degradation']['type'],
+            scale=opt['scale'])
+
     else:
         raise ValueError('Unrecognized generator: {}'.format(
             net_G_opt['name']))

@@ -7,6 +7,7 @@ from .base_nets import BaseSequenceGenerator, BaseSequenceDiscriminator
 from utils.net_utils import space_to_depth, backward_warp, get_upsampling_func
 from utils.net_utils import initialize_weights
 from utils.data_utils import float32_to_uint8
+from utils.block_utils import RepVSRRB
 
 import flow_vis
 
@@ -102,7 +103,7 @@ class SRNet(nn.Module):
     """ Reconstruction & Upsampling network
     """
 
-    def __init__(self, in_nc=3, out_nc=3, nf=64, nb=16, upsample_func=None,
+    def __init__(self, in_nc=3, out_nc=3, nf=64, nb=6, upsample_func=None,
                  scale=4):
         super(SRNet, self).__init__()
 
@@ -112,20 +113,15 @@ class SRNet(nn.Module):
             nn.ReLU(inplace=True))
 
         # residual blocks
-        self.resblocks = nn.Sequential(*[ResidualBlock(nf) for _ in range(nb)])
+        self.resblocks = nn.Sequential(*[RepVSRRB(nf, nf, 4, with_idt=True) for _ in range(nb)])
 
-        # upsampling
-        self.conv_up = nn.Sequential(
-            nn.ConvTranspose2d(nf, nf, 3, 2, 1, output_padding=1, bias=True),
-            nn.ReLU(inplace=True),
-            nn.ConvTranspose2d(nf, nf, 3, 2, 1, output_padding=1, bias=True),
+        # upsampling function
+        self.conv_up_pixelshuffle = nn.Sequential(
+            nn.PixelShuffle(4),
             nn.ReLU(inplace=True))
 
         # output conv.
-        self.conv_out = nn.Conv2d(nf, out_nc, 3, 1, 1, bias=True)
-
-        # upsampling function
-        self.upsample_func = upsample_func
+        self.conv_out = nn.Conv2d(4, out_nc, 3, 1, 1, bias=True)
 
     def forward(self, lr_curr, hr_prev_tran):
         """ lr_curr: the current lr data in shape nchw
@@ -134,9 +130,8 @@ class SRNet(nn.Module):
 
         out = self.conv_in(torch.cat([lr_curr, hr_prev_tran], dim=1))
         out = self.resblocks(out)
-        out = self.conv_up(out)
+        out = self.conv_up_pixelshuffle(out)
         out = self.conv_out(out)
-        out += self.upsample_func(lr_curr)
 
         return out
 
