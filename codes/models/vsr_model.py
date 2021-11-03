@@ -33,6 +33,8 @@ class VSRModel(BaseModel):
     def set_network(self):
         # define net G
         self.net_G = define_generator(self.opt).to(self.device)
+        self.print_network(self.net_G)
+
         if self.verbose:
             self.logger.info('Generator: {}\n'.format(
                 self.opt['model']['generator']['name']) + self.net_G.__str__())
@@ -43,6 +45,19 @@ class VSRModel(BaseModel):
             self.load_network(self.net_G, load_path_G)
             if self.verbose:
                 self.logger.info('Load generator from: {}'.format(load_path_G))
+
+    def print_network(self, net):
+        """Print the str and parameter number of a network.
+        Args:
+            net (nn.Module)
+        """
+     
+        net_cls_str = f'{net.__class__.__name__}'
+        net_str = str(net)
+        net_params = sum(map(lambda x: x.numel(), net.parameters()))
+
+        self.logger.info(f'Network: {net_cls_str}, with parameters: {net_params:,d}')
+        #self.logger.info(net_str)
 
     def config_training(self):
         # set criterion

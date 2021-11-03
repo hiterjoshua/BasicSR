@@ -170,3 +170,6 @@ This code is built on the following projects. We thank the authors for sharing t
 scirpts/create_lmdb.py resize_BD_BI.py could be used for lmdb generation and lr transformation, but noticed that only hr lmdb demanded in this repo.
 2. Doing: change SRNet to smaller network, namned RepFrvsr network.
 3. TODO: FNet reparameterazation and lmdb change, input channel and output channel changed from 3 to 1, follow the more advanced style--YUV style.
+
+### A. 20211102 update:
+SRNet changed to smaller network and renamed RepVSR network, lmdb load style and input channels ought to be modified in recent time, take YUV problem as urgent affair.

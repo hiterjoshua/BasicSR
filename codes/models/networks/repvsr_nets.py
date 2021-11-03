@@ -10,6 +10,7 @@ from utils.data_utils import float32_to_uint8
 from utils.block_utils import RepVSRRB
 
 import flow_vis
+from ptflops import get_model_complexity_info
 
 # -------------------- generator modules -------------------- #
 class FNet(nn.Module):
@@ -152,6 +153,8 @@ class FRNet(BaseSequenceGenerator):
         # define fnet & srnet
         self.fnet = FNet(in_nc)
         self.srnet = SRNet(in_nc, out_nc, nf, nb, self.upsample_func)
+        self.print_network_fnet(self.fnet)
+        self.print_network_srnet(self.srnet)
 
     def generate_dummy_input(self, lr_size):
         c, lr_h, lr_w = lr_size
@@ -287,6 +290,25 @@ class FRNet(BaseSequenceGenerator):
 
         return np.stack(hr_seq)
 
+    def print_network_fnet(self, net):
+
+        net_cls_str = f'{net.__class__.__name__}'
+        net_str = str(net)
+        net_params = sum(map(lambda x: x.numel(), net.parameters()))
+        # a = map(lambda x: x.numel(), net.parameters())
+        # for key in a:
+        #     print(key)
+
+        print(f'FNet Network: {net_cls_str}, with parameters: {net_params:,d}')
+
+
+    def print_network_srnet(self, net):
+
+        net_cls_str = f'{net.__class__.__name__}'
+        net_str = str(net)
+        net_params = sum(map(lambda x: x.numel(), net.parameters()))
+
+        print(f'SRNet Network: {net_cls_str}, with parameters: {net_params:,d}')
 
 
 # ------------------ discriminator modules ------------------ #
