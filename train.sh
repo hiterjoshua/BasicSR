@@ -8,7 +8,7 @@
 degradation=$1
 model=$2
 exp_id=001
-gpu_id=0
+gpu_id=1
 
 
 # retain training or train from scratch

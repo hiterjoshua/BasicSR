@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-def reparameter_13(s_1, s_2):
+def reparameter_13(s_1, s_2):   
     if isinstance(s_1, nn.Conv2d):
         w_s_1 = s_1.weight  # output# * input# * kernel * kernel
         b_s_1 = s_1.bias
@@ -16,6 +16,11 @@ def reparameter_13(s_1, s_2):
         w_s_2 = s_2['weight']
         b_s_2 = s_2['bias']
     
+    device = w_s_1.get_device()
+    if device < 0:
+        device = None
+    device = torch.device("cuda")
+
     fused = torch.nn.Conv2d(
         s_1.in_channels,
         s_2.out_channels,
@@ -59,6 +64,11 @@ def reparameter_31(s_1, s_2):
         w_s_2 = s_2['weight']
         b_s_2 = s_2['bias']
 
+    device = w_s_1.get_device()
+    if device < 0:
+        device = None
+    device = torch.device("cuda")
+
     fused = torch.nn.Conv2d(
         s_1.in_channels,
         s_2.out_channels,
@@ -73,7 +83,7 @@ def reparameter_31(s_1, s_2):
     new_weight_ = torch.Tensor(w_s_2.size(0), w_s_1.size(1), w_s_1.size(2)*w_s_1.size(3))
     for i in range(w_s_1.size(1)):
         tmp = w_s_1_[:, i, :].view(w_s_1.size(0),  w_s_1.size(2) * w_s_1.size(3))
-        new_weight_[:, i, :] = torch.matmul(w_s_2_, tmp)
+        new_weight_[:, i, :] = torch.matmul(w_s_2_.to(device), tmp.to(device))
     new_weight = new_weight_.view(w_s_2.size(0), w_s_1.size(1),  w_s_1.size(2), w_s_1.size(3))
 
     if b_s_1 is not None and b_s_2 is not None:
@@ -186,7 +196,7 @@ class SeqConv3x3(nn.Module):
             # re-param conv kernel
             temp = reparameter_13(self.conv0, self.conv1)
             fused = reparameter_31(temp, self.conv2)
-            return fused.weight, fused.bias
+            return fused.weight.to(device), fused.bias.to(device)
 
         else:
             tmp = self.scale * self.mask
