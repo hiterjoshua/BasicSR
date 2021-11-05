@@ -3,8 +3,8 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
 from .paired_lmdb_dataset import PairedLMDBDataset
-from .unpaired_lmdb_dataset import UnpairedLMDBDataset
-from .paired_folder_dataset import PairedFolderDataset
+from .unpaired_lmdb_dataset import UnpairedLMDBDataset, UnpairedLMDBDataset_single
+from .paired_folder_dataset import PairedFolderDataset, PairedFolderDataset_single
 
 
 def create_dataloader(opt, dataset_idx='train'):
@@ -33,12 +33,20 @@ def create_dataloader(opt, dataset_idx='train'):
             enlarged_crop_size = data_opt['crop_size'] + 2 * int(sigma * 3.0)
 
             # create dataset
-            dataset = UnpairedLMDBDataset(
-                data_opt,
-                crop_size=enlarged_crop_size,  # override
-                tempo_extent=opt['train']['tempo_extent'],
-                moving_first_frame=opt['train'].get('moving_first_frame', False),
-                moving_factor=opt['train'].get('moving_factor', 1.0))
+            if opt['dataset']['mode']['singleY']:
+                dataset = UnpairedLMDBDataset_single(
+                    data_opt,
+                    crop_size=enlarged_crop_size,  # override
+                    tempo_extent=opt['train']['tempo_extent'],
+                    moving_first_frame=opt['train'].get('moving_first_frame', False),
+                    moving_factor=opt['train'].get('moving_factor', 1.0))
+            else:
+                dataset = UnpairedLMDBDataset(
+                    data_opt,
+                    crop_size=enlarged_crop_size,  # override
+                    tempo_extent=opt['train']['tempo_extent'],
+                    moving_first_frame=opt['train'].get('moving_first_frame', False),
+                    moving_factor=opt['train'].get('moving_factor', 1.0))
 
         else:
             raise ValueError('Unrecognized degradation type: {}'.format(
@@ -55,14 +63,22 @@ def create_dataloader(opt, dataset_idx='train'):
     # -------------- loader for testing -------------- #
     elif dataset_idx.startswith('test'):
         # create data loader
-        dataset = PairedFolderDataset(data_opt, scale=opt['scale'])
-        loader = DataLoader(
-            dataset=dataset,
-            batch_size=1,
-            shuffle=False,
-            num_workers=data_opt['num_workers'],
-            pin_memory=data_opt['pin_memory'])
-
+        if opt['dataset']['mode']['singleY']:
+            dataset = PairedFolderDataset_single(data_opt, scale=opt['scale'])
+            loader = DataLoader(
+                dataset=dataset,
+                batch_size=1,
+                shuffle=False,
+                num_workers=data_opt['num_workers'],
+                pin_memory=data_opt['pin_memory'])
+        else:
+            dataset = PairedFolderDataset(data_opt, scale=opt['scale'])
+            loader = DataLoader(
+                dataset=dataset,
+                batch_size=1,
+                shuffle=False,
+                num_workers=data_opt['num_workers'],
+                pin_memory=data_opt['pin_memory'])
     else:
         raise ValueError('Unrecognized dataset index: {}'.format(dataset_idx))
 
@@ -91,11 +107,13 @@ def prepare_data(opt, data, kernel):
 
         gt_with_border = data['gt'].to(device)
         n, t, c, gt_h, gt_w = gt_with_border.size()
+        # print('gt_with_border.size():   ',  gt_with_border.size())
         lr_h = (gt_h - 2 * border_size) // scale
         lr_w = (gt_w - 2 * border_size) // scale
 
         # generate lr data
         gt_with_border = gt_with_border.view(n * t, c, gt_h, gt_w)
+        # print('kernel: ', kernel.shape)
         lr_data = F.conv2d(
             gt_with_border, kernel, stride=scale, bias=None, padding=0)
         lr_data = lr_data.view(n, t, c, lr_h, lr_w)

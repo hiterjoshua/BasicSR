@@ -1,10 +1,7 @@
 results
 data
 *pycache*
-experiments_BD/FRVSR/001/train/codes_backup/*
-experiments_BD/FRVSR/001/train/ckpt/*
-experiments_BD/FRVSR/002/train/codes_backup/*
-experiments_BD/FRVSR/002/train/ckpt/*
-experiments_BD/REPVSR/001/train/codes_backup/*
-experiments_BD/REPVSR/001/train/ckpt/*
-experiments_BD/REPVSR/001/test
+experiments_BD/FRVSR/001/train/
+experiments_BD/FRVSR/002/train/
+experiments_BD/FRVSR/002/train/
+experiments_BD/REPVSR/

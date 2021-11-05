@@ -21,10 +21,13 @@ def create_kernel(opt):
         [gaussian_kernel, zero_kernel, zero_kernel],
         [zero_kernel, gaussian_kernel, zero_kernel],
         [zero_kernel, zero_kernel, gaussian_kernel]])
+    
+    if opt['dataset']['mode']['singleY']:
+        kernel = np.float32([[gaussian_kernel]])
 
     device = torch.device(opt['device'])
     kernel = torch.from_numpy(kernel).to(device)
-
+    
     return kernel
 
 

@@ -27,6 +27,7 @@ class MetricCalculator():
         # initialize
         self.metric_opt = opt['metric']
         self.device = torch.device(opt['device'])
+        self.single_flag = opt['dataset']['mode']['singleY']
 
         self.psnr_mult = 1
         self.psnr_colorspace = ''
@@ -206,13 +207,17 @@ class MetricCalculator():
                     metric_dict['tOF'].append(tOF)
 
     def compute_PSNR(self):
-        if self.psnr_colorspace == 'rgb':
+        if self.single_flag:
             true_img = self.true_img_cur
             pred_img = self.pred_img_cur
         else:
-            # convert to ycbcr, and keep the y channel
-            true_img = data_utils.rgb_to_ycbcr(self.true_img_cur)[..., 0]
-            pred_img = data_utils.rgb_to_ycbcr(self.pred_img_cur)[..., 0]
+            if self.psnr_colorspace == 'rgb':
+                true_img = self.true_img_cur
+                pred_img = self.pred_img_cur
+            else:
+                # convert to ycbcr, and keep the y channel
+                true_img = data_utils.rgb_to_ycbcr(self.true_img_cur)[..., 0]
+                pred_img = data_utils.rgb_to_ycbcr(self.pred_img_cur)[..., 0]
 
         diff = true_img.astype(np.float64) - pred_img.astype(np.float64)
         RMSE = np.sqrt(np.mean(np.power(diff, 2)))

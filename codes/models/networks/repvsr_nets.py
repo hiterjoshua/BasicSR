@@ -132,7 +132,7 @@ class SRNet(nn.Module):
         out = self.conv_in(torch.cat([lr_curr, hr_prev_tran], dim=1))
         out = self.resblocks(out)
         out = self.conv_up_pixelshuffle(out)
-        out = self.conv_out(out)
+        #out = self.conv_out(out)
 
         return out
 
