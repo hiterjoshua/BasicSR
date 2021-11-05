@@ -173,3 +173,6 @@ scirpts/create_lmdb.py resize_BD_BI.py could be used for lmdb generation and lr 
 
 ### A. 20211102 update:
 SRNet changed to smaller network and renamed RepVSR network, lmdb load style and input channels ought to be modified in recent time, take YUV problem as urgent affair.
+
+### A. 20211105 update:
+YUV single channel mode has been finished, include data processing, vsr_model infer stage code and gauss blur function rewrite.

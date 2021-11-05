@@ -9,6 +9,9 @@ dataset:
   degradation:
     type: BD
     sigma: 1.5
+    
+  mode:
+    singleY: False
 
   train:
     name: VimeoTecoGAN

@@ -9,7 +9,8 @@ dataset:
   degradation:
     type: BD
     sigma: 1.5
-
+  mode:
+    singleY: False
   test1:
     name: Vid4
     gt_seq_dir: data/Vid4/GT

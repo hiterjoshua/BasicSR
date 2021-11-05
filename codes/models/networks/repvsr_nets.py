@@ -108,6 +108,7 @@ class SRNet(nn.Module):
                  scale=4):
         super(SRNet, self).__init__()
 
+        self.in_nc = in_nc
         # input conv.
         self.conv_in = nn.Sequential(
             nn.Conv2d((scale**2 + 1) * in_nc, nf, 3, 1, 1, bias=True),
@@ -128,11 +129,11 @@ class SRNet(nn.Module):
         """ lr_curr: the current lr data in shape nchw
             hr_prev_tran: the previous transformed hr_data in shape n(4*4*c)hw
         """
-
         out = self.conv_in(torch.cat([lr_curr, hr_prev_tran], dim=1))
         out = self.resblocks(out)
         out = self.conv_up_pixelshuffle(out)
-        #out = self.conv_out(out)
+        if self.in_nc == 3:
+            out = self.conv_out(out)
 
         return out
 

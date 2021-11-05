@@ -9,6 +9,9 @@ dataset:
   degradation:
     type: BD
     sigma: 1.5
+  
+  mode:
+    singleY: False
 
   test1:
     name: Vid4
@@ -39,12 +42,12 @@ model:
   name: FRVSR
 
   generator:
-    name: FRNet  # frame-recurrent network
+    name: REPVSR  # frame-recurrent network
     in_nc: 3
     out_nc: 3
     nf: 64
-    nb: 10
-    load_path: pretrained_models/FRVSR_BD_iter400000.pth
+    nb: 6
+    load_path: experiments_BD/REPVSR/001/train/ckpt/G_iter200000.pth
 
 
 # test configs

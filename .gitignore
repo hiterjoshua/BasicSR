@@ -4,4 +4,4 @@ data
 experiments_BD/FRVSR/001/train/
 experiments_BD/FRVSR/002/train/
 experiments_BD/FRVSR/002/train/
-experiments_BD/REPVSR/
+experiments_BD/REPVSR/*
