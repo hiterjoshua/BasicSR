@@ -95,22 +95,30 @@ class PairedFolderDataset_single(BaseDataset):
 
         # load lr frames
         lr_seq = []
+        uv_seq = []
         for frm_path in retrieve_files(osp.join(self.lr_seq_dir, key)):
             frm = cv2.imread(frm_path)[..., ::-1]
             frm = cv2.cvtColor(frm, cv2.COLOR_RGB2YCrCb)
+            #UV channel saved
+            uv = frm[:,:,1:3]
+            uv_seq.append(uv)
+
             # only work on the luminance channel Y
             frm = frm[:,:,0:1].astype(np.float32) / 255.0
             lr_seq.append(frm)
-        lr_seq = np.stack(lr_seq)  # thwc|rgb|float32
+        lr_seq = np.stack(lr_seq)  # thwc|Y|
+        uv_seq = np.stack(uv_seq)  # thwc|UV|
 
         # convert to tensor
         gt_tsr = torch.from_numpy(np.ascontiguousarray(gt_seq))  # uint8
         lr_tsr = torch.from_numpy(np.ascontiguousarray(lr_seq))  # float32
+        uv_tsr = torch.from_numpy(np.ascontiguousarray(uv_seq))  # uint8
 
         # gt: thwc|rgb||uint8 | lr: thwc|rgb|float32
         return {
             'gt': gt_tsr,
             'lr': lr_tsr,
+            'uv': uv_tsr,
             'seq_idx': key,
             'frm_idx': sorted(os.listdir(osp.join(self.gt_seq_dir, key)))
         }

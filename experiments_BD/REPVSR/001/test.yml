@@ -47,7 +47,7 @@ model:
     out_nc: 3
     nf: 64
     nb: 6
-    load_path: experiments_BD/REPVSR/001/train/ckpt/G_iter200000.pth
+    load_path: experiments_BD/REPVSR/001/train/ckpt/RepVSR_iter400000_three_rb6.pth
 
 
 # test configs

@@ -187,9 +187,10 @@ def test(opt):
 
                 # fetch data
                 lr_data = data['lr'][0]
+                uv_data = data['uv'][0]
                 seq_idx = data['seq_idx'][0]
                 frm_idx = [frm_idx[0] for frm_idx in data['frm_idx']]
-
+               
                 # infer
                 hr_seq = model.infer(lr_data)  # thwc|rgb|uint8
 
@@ -197,7 +198,7 @@ def test(opt):
                 if opt['test']['save_res']:
                     res_dir = osp.join(opt['test']['res_dir'], ds_name, model_idx)
                     res_seq_dir = osp.join(res_dir, seq_idx)
-                    data_utils.save_sequence(res_seq_dir, hr_seq, frm_idx, to_bgr=True)
+                    data_utils.save_sequence_YUV(res_seq_dir, hr_seq, uv_data, frm_idx, zoom_scale=opt['scale'])
 
                 # compute metrics for the current sequence
                 true_seq_dir = osp.join(opt['dataset'][dataset_idx]['gt_seq_dir'], seq_idx)

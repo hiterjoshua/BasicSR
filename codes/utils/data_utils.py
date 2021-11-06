@@ -132,3 +132,30 @@ def save_sequence(seq_dir, seq_data, frm_idx_lst=None, to_bgr=False):
     for i in range(tot_frm):
         cv2.imwrite(osp.join(seq_dir, frm_idx_lst[i]), seq_data[i])
 
+
+
+def save_sequence_YUV(seq_dir, seq_data, uv_data, frm_idx_lst=None, zoom_scale=4):
+    """ Save each frame of a sequence to .png image in seq_dir
+
+        Parameters:
+            :param seq_dir: dir to save results
+            :param seq_data: sequence with shape thwc|uint8
+            :param frm_idx_lst: specify filename for each frame to be saved
+    """
+
+    # use default frm_idx_lst is not specified
+    tot_frm = len(seq_data)
+    if frm_idx_lst is None:
+        frm_idx_lst = ['{:04d}.png'.format(i) for i in range(tot_frm)]
+
+    # save for each frame
+    os.makedirs(seq_dir, exist_ok=True)
+    for i in range(tot_frm):
+        U =  np.uint8(uv_data[i][:,:,0:1])
+        V =  np.uint8(uv_data[i][:,:,1:2])
+        height, width = U.shape[0:2]
+        U = cv2.resize(U, (width*zoom_scale, height*zoom_scale), interpolation=cv2.INTER_NEAREST)
+        V = cv2.resize(V, (width*zoom_scale, height*zoom_scale), interpolation=cv2.INTER_NEAREST)
+        merged_frame = cv2.merge((seq_data[i], U, V))
+        frm = cv2.cvtColor(merged_frame, cv2.COLOR_YCrCb2BGR)
+        cv2.imwrite(osp.join(seq_dir, frm_idx_lst[i]), frm)

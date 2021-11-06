@@ -7,7 +7,7 @@
 degradation=$1
 model=$2
 gpu_id=4
-exp_id=001
+exp_id=singleway
 
 
 # run
