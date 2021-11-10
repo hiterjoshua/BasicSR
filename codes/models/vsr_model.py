@@ -46,6 +46,21 @@ class VSRModel(BaseModel):
             if self.verbose:
                 self.logger.info('Load generator from: {}'.format(load_path_G))
 
+        #reparameterazation
+        if 'convert_flag' in self.opt.values():
+            if self.opt['convert_flag'] == True:
+                self.net_G = self.model_convert(self.net_G, self.opt['convert_flag'])
+                self.print_network(self.net_G)
+
+
+    # add by hukunlei, for model reparameterization
+    def model_convert(self, model, convert_flag):
+        for module in model.srnet.resblocks:
+            if hasattr(module, 'switch_to_deploy') and convert_flag:
+                module.switch_to_deploy()
+        return model
+        
+
     def print_network(self, net):
         """Print the str and parameter number of a network.
         Args:
@@ -151,6 +166,7 @@ class VSRModel(BaseModel):
 
         # infer
         hr_seq = self.net_G.infer_sequence(lr_data, self.device)
+        print('after wards -- ', self.net_G)
         hr_seq = hr_seq[n_pad_front:, ...]
 
         return hr_seq

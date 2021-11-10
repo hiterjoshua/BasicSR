@@ -123,6 +123,14 @@ class SeqConv3x3(nn.Module):
             self.conv1 = torch.nn.Conv2d(self.mid_planes, self.mid_planes, kernel_size=3, padding=0)
             self.conv2 = torch.nn.Conv2d(self.mid_planes, self.out_planes, kernel_size=1, padding=0)
             self.k0 = self.conv0.weight
+        
+        elif self.type == 'conv3x3-conv1x1':
+            self.mid_planes = int(out_planes * depth_multiplier)
+            self.padding = nn.ZeroPad2d(1)
+
+            self.conv0 = torch.nn.Conv2d(self.inp_planes, self.mid_planes, kernel_size=3, padding=0)
+            self.conv1 = torch.nn.Conv2d(self.mid_planes, self.out_planes, kernel_size=1, padding=0)
+            self.k0 = self.conv0.weight
 
         elif self.type == 'conv1x1-laplacian':
             conv0 = torch.nn.Conv2d(self.inp_planes, self.out_planes, kernel_size=1, padding=0)
@@ -166,6 +174,9 @@ class SeqConv3x3(nn.Module):
         
         elif self.type == 'conv1x1-conv3x3-conv1x1':
             y1 = self.conv2(self.conv1(self.conv0(self.padding(x))))
+
+        elif self.type == 'conv3x3-conv1x1':
+            y1 = self.conv1(self.conv0(self.padding(x)))
             
         else:
             y0 = F.conv2d(input=x, weight=self.k0, bias=self.b0, stride=1)
@@ -198,6 +209,11 @@ class SeqConv3x3(nn.Module):
             fused = reparameter_31(temp, self.conv2)
             return fused.weight.to(device), fused.bias.to(device)
 
+        elif self.type == 'conv3x3-conv1x1':
+            # re-param conv kernel
+            fused = reparameter_31(self.conv0, self.conv1)
+            return fused.weight.to(device), fused.bias.to(device)
+
         else:
             tmp = self.scale * self.mask
             k1 = torch.zeros((self.out_planes, self.out_planes, 3, 3), device=device)
@@ -214,45 +230,42 @@ class SeqConv3x3(nn.Module):
 
 
 class RepVSRRB(nn.Module):
-    def __init__(self, inp_planes, out_planes, depth_multiplier, with_idt = False):
+    def __init__(self, inp_planes, out_planes, depth_multiplier, deploy_flag = False):
         super(RepVSRRB, self).__init__()
 
         self.depth_multiplier = depth_multiplier
         self.inp_planes = inp_planes
         self.out_planes = out_planes
+        self.deploy = deploy_flag
         
-        if with_idt and (self.inp_planes == self.out_planes):
-            self.with_idt = True
+        if self.deploy:
+            self.rbr_reparam = nn.Conv2d(num_feat, num_feat, self.kernal_size, 1, self.kernal_size//2, bias=True)
         else:
-            self.with_idt = False
-
-        self.conv3x3 = torch.nn.Conv2d(self.inp_planes, self.out_planes, kernel_size=3, padding=1)
-        self.conv1x1_3x3 = SeqConv3x3('conv1x1-conv3x3', self.inp_planes, self.out_planes, self.depth_multiplier)
-        self.conv1x1_3x3_1x1 = SeqConv3x3('conv1x1-conv3x3-conv1x1', self.inp_planes, self.out_planes, self.depth_multiplier)       
-        self.conv1x1_lpl = SeqConv3x3('conv1x1-laplacian', self.inp_planes, self.out_planes, -1)
-
-        self.act = nn.ReLU(inplace=True)
+            self.conv3x3 = torch.nn.Conv2d(self.inp_planes, self.out_planes, kernel_size=3, padding=1)
+            self.conv1x1_3x3 = SeqConv3x3('conv1x1-conv3x3', self.inp_planes, self.out_planes, self.depth_multiplier)
+            self.conv1x1_3x3_1x1 = SeqConv3x3('conv1x1-conv3x3-conv1x1', self.inp_planes, self.out_planes, self.depth_multiplier)   
+            self.conv3x3_1x1 = SeqConv3x3('conv3x3-conv1x1', self.inp_planes, self.out_planes, self.depth_multiplier)       
+            self.conv1x1_lpl = SeqConv3x3('conv1x1-laplacian', self.inp_planes, self.out_planes, -1)
 
     def forward(self, x):
-        if self.training:
+        if hasattr(self, 'rbr_reparam'):
+            y = self.rbr_reparam(x)
+        else:
             y = self.conv3x3(x)     + \
                 self.conv1x1_3x3(x) + \
                 self.conv1x1_3x3_1x1(x) + \
+                self.conv3x3_1x1(x) + \
                 self.conv1x1_lpl(x)
             y += x
-
-        else:
-            RK, RB = self.rep_params()
-            y = F.conv2d(input=x, weight=RK, bias=RB, stride=1, padding=1) 
-            y = self.act(y)
         return y
 
     def rep_params(self):
         K0, B0 = self.conv3x3.weight, self.conv3x3.bias
         K1, B1 = self.conv1x1_3x3.rep_params()
         K2, B2 = self.conv1x1_3x3_1x1.rep_params()
+        K3, B3 = self.conv3x3_1x1.rep_params()
         K4, B4 = self.conv1x1_lpl.rep_params()
-        RK, RB = (K0+K1+K2+K4), (B0+B1+B2+B4)
+        RK, RB = (K0+K1+K2+K3+K4), (B0+B1+B2+B3+B4)
 
         device = RK.get_device()
         if device < 0:
@@ -263,22 +276,62 @@ class RepVSRRB(nn.Module):
         B_idt = 0.0
         RK, RB = RK + K_idt, RB + B_idt
         return RK, RB
+    
+    def switch_to_deploy(self):
+        if hasattr(self, 'rbr_reparam'):
+            return
+        self.rbr_reparam = torch.nn.Conv2d(self.inp_planes, self.out_planes, kernel_size=3, padding=1)
+        RK, RB = self.rep_params()
+        self.rbr_reparam.weight.data = RK
+        self.rbr_reparam.bias.data = RB
+        for para in self.parameters():
+            para.detach_()
+        self.__delattr__('conv3x3')
+        self.__delattr__('conv1x1_3x3')
+        self.__delattr__('conv1x1_3x3_1x1')
+        self.__delattr__('conv3x3_1x1')
+        self.__delattr__('conv1x1_lpl')
+
 
 if __name__ == '__main__':
 
     # # test seq-conv
-    x = torch.randn(1, 3, 5, 5)
+    x = torch.randn(1, 3, 5, 5)* 200
     conv = SeqConv3x3('conv1x1-conv3x3-conv1x1', 3, 3, 2)
     y0 = conv(x)
     RK, RB = conv.rep_params()
     y1 = F.conv2d(input=x, weight=RK, bias=RB, stride=1, padding=1)
-    print(torch.sum(torch.abs(y0-y1)))
+    print('conv1x1-conv3x3-conv1x1: ', torch.mean(torch.abs(y0-y1)))
+
+    # test seq-conv
+    x = torch.randn(1, 3, 128, 128)* 200
+    conv = SeqConv3x3('conv1x1-laplacian', 3, 3, 2)
+    y0 = conv(x)
+    RK, RB = conv.rep_params()
+    y1 = F.conv2d(input=x, weight=RK, bias=RB, stride=1, padding=1)
+    print('conv1x1-laplacian: ', torch.mean(torch.abs(y0-y1)))
+
+    # test seq-conv
+    x = torch.randn(1, 3, 128, 128)* 200
+    conv = SeqConv3x3('conv1x1-conv3x3', 3, 3, 2)
+    y0 = conv(x)
+    RK, RB = conv.rep_params()
+    y1 = F.conv2d(input=x, weight=RK, bias=RB, stride=1, padding=1)
+    print('conv1x1-conv3x3: ', torch.mean(torch.abs(y0-y1)))
+
+        # test seq-conv
+    x = torch.randn(1, 3, 128, 128)* 200
+    conv = SeqConv3x3('conv3x3-conv1x1', 3, 3, 2)
+    y0 = conv(x)
+    RK, RB = conv.rep_params()
+    y1 = F.conv2d(input=x, weight=RK, bias=RB, stride=1, padding=1)
+    print('conv3x3-conv1x1: ', torch.mean(torch.abs(y0-y1)))
 
     # test repvsrrb
     x = torch.randn(1, 16, 5, 5) * 200
-    repvsrrb = RepVSRRB(16, 16, 4, with_idt=True)
+    repvsrrb = RepVSRRB(16, 16, 4)
     y0 = repvsrrb(x)
 
     RK, RB = repvsrrb.rep_params()
     y1 = F.conv2d(input=x, weight=RK, bias=RB, stride=1, padding=1)
-    print(torch.sum(torch.abs(y0-y1)))
+    print('RepVSRRB after reparameterization: ', torch.mean(torch.abs(y0-y1)))

@@ -115,7 +115,8 @@ class SRNet(nn.Module):
             nn.ReLU(inplace=True))
 
         # residual blocks
-        self.resblocks = nn.Sequential(*[RepVSRRB(nf, nf, 4, with_idt=True) for _ in range(nb)])
+        self.resblocks = nn.Sequential(*[RepVSRRB(nf, nf, 4) for _ in range(nb)])
+        self.act = nn.ReLU(inplace=True)
 
         # upsampling function
         self.conv_up_pixelshuffle = nn.Sequential(
@@ -130,7 +131,9 @@ class SRNet(nn.Module):
             hr_prev_tran: the previous transformed hr_data in shape n(4*4*c)hw
         """
         out = self.conv_in(torch.cat([lr_curr, hr_prev_tran], dim=1))
-        out = self.resblocks(out)
+        for block in self.resblocks:
+            out = block(out)
+            out = self.act(out)
         out = self.conv_up_pixelshuffle(out)
         if self.in_nc == 3:
             out = self.conv_out(out)
@@ -299,7 +302,7 @@ class FRNet(BaseSequenceGenerator):
         # a = map(lambda x: x.numel(), net.parameters())
         # for key in a:
         #     print(key)
-
+        #print(net_str)
         print(f'FNet Network: {net_cls_str}, with parameters: {net_params:,d}')
 
 
@@ -309,6 +312,7 @@ class FRNet(BaseSequenceGenerator):
         net_str = str(net)
         net_params = sum(map(lambda x: x.numel(), net.parameters()))
 
+        #print(net_str)
         print(f'SRNet Network: {net_cls_str}, with parameters: {net_params:,d}')
 
 
