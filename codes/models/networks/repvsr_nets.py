@@ -8,6 +8,7 @@ from utils.net_utils import space_to_depth, backward_warp, get_upsampling_func
 from utils.net_utils import initialize_weights
 from utils.data_utils import float32_to_uint8
 from utils.block_utils import RepVSRRB
+from utils.rep_fnet import REP_FNet
 
 import flow_vis
 from ptflops import get_model_complexity_info
@@ -26,6 +27,7 @@ class FNet(nn.Module):
             nn.Conv2d(32, 32, 3, 1, 1, bias=True),
             nn.LeakyReLU(0.2, inplace=True),
             nn.MaxPool2d(2, 2))
+            #nn.AvgPool2d(2,2))
 
         self.encoder2 = nn.Sequential(
             nn.Conv2d(32, 64, 3, 1, 1, bias=True),
@@ -33,6 +35,7 @@ class FNet(nn.Module):
             nn.Conv2d(64, 64, 3, 1, 1, bias=True),
             nn.LeakyReLU(0.2, inplace=True),
             nn.MaxPool2d(2, 2))
+            #nn.AvgPool2d(2,2))
 
         self.encoder3 = nn.Sequential(
             nn.Conv2d(64, 128, 3, 1, 1, bias=True),
@@ -40,6 +43,7 @@ class FNet(nn.Module):
             nn.Conv2d(128, 128, 3, 1, 1, bias=True),
             nn.LeakyReLU(0.2, inplace=True),
             nn.MaxPool2d(2, 2))
+            #nn.AvgPool2d(2,2))
 
         self.decoder1 = nn.Sequential(
             nn.Conv2d(128, 256, 3, 1, 1, bias=True),
@@ -155,7 +159,8 @@ class FRNet(BaseSequenceGenerator):
         self.upsample_func = get_upsampling_func(self.scale, degradation)
 
         # define fnet & srnet
-        self.fnet = FNet(in_nc)
+        # self.fnet = FNet(in_nc)
+        self.fnet = REP_FNet(in_nc)
         self.srnet = SRNet(in_nc, out_nc, nf, nb, self.upsample_func)
         self.print_network_fnet(self.fnet)
         self.print_network_srnet(self.srnet)

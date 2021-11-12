@@ -23,21 +23,24 @@ class FNet(nn.Module):
             nn.LeakyReLU(0.2, inplace=True),
             nn.Conv2d(32, 32, 3, 1, 1, bias=True),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.MaxPool2d(2, 2))
+            #nn.MaxPool2d(2, 2))
+            nn.AvgPool2d(2,2))
 
         self.encoder2 = nn.Sequential(
             nn.Conv2d(32, 64, 3, 1, 1, bias=True),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Conv2d(64, 64, 3, 1, 1, bias=True),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.MaxPool2d(2, 2))
+            #nn.MaxPool2d(2, 2))
+            nn.AvgPool2d(2,2))
 
         self.encoder3 = nn.Sequential(
             nn.Conv2d(64, 128, 3, 1, 1, bias=True),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Conv2d(128, 128, 3, 1, 1, bias=True),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.MaxPool2d(2, 2))
+            #nn.MaxPool2d(2, 2))
+            nn.AvgPool2d(2,2))
 
         self.decoder1 = nn.Sequential(
             nn.Conv2d(128, 256, 3, 1, 1, bias=True),

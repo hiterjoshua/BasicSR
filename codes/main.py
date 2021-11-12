@@ -163,6 +163,17 @@ def test(opt):
         # create model
         opt['model']['generator']['load_path'] = load_path
         model = define_model(opt)
+        
+        # save model 
+        # TODO
+        # if 'convert_flag' in self.opt.values():
+        #     if self.opt['convert_flag'] == True:
+        #         if 'save_path' in self.opt['model']['generator'].values():
+        #         save_path = opt['model']['generator']['generator'].get('pretrain_network_g', None)
+        #         reparam_name = save_path.split('/')[-1].split('.')[0].split('_')[-1] + '_reparam'
+        #         if reparam_name is not None:
+        #             model.save_reparam(reparam_name)
+
 
         # for each test dataset
         for dataset_idx in sorted(opt['dataset'].keys()):

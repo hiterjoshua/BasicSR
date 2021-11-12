@@ -239,7 +239,7 @@ class RepVSRRB(nn.Module):
         self.deploy = deploy_flag
         
         if self.deploy:
-            self.rbr_reparam = nn.Conv2d(num_feat, num_feat, self.kernal_size, 1, self.kernal_size//2, bias=True)
+            self.rbr_reparam = nn.Conv2d(self.inp_planes, self.out_planes, kernel_size=3, padding=1, bias=True)
         else:
             self.conv3x3 = torch.nn.Conv2d(self.inp_planes, self.out_planes, kernel_size=3, padding=1)
             self.conv1x1_3x3 = SeqConv3x3('conv1x1-conv3x3', self.inp_planes, self.out_planes, self.depth_multiplier)

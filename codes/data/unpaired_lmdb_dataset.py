@@ -92,6 +92,39 @@ class UnpairedLMDBDataset(BaseDataset):
         # tchw|rgb|float32
         return {'gt': tsr}
 
+    def crop_sequence(self, frms):
+        csz = self.crop_size
+
+        h, w = frms.shape[-2:]
+        assert (csz <= h) and (csz <= w), \
+            'the crop size is larger than the image size'
+
+        # crop
+        top = random.randint(0, h - csz)
+        left = random.randint(0, w - csz)
+        pats = frms[..., top: top + csz, left: left + csz]
+
+        return pats
+
+    @staticmethod
+    def augment_sequence(pats):
+        # flip spatially
+        axis = random.randint(1, 3)
+        if axis > 1:
+            pats = np.flip(pats, axis)
+
+        # flip temporally
+        axis = random.randint(0, 1)
+        if axis < 1:
+            pats = np.flip(pats, axis)
+
+        # rotate
+        k = random.randint(0, 3)
+        pats = np.rot90(pats, k, (2, 3))
+
+        return pats
+
+
 class UnpairedLMDBDataset_single(BaseDataset):
     def __init__(self, data_opt, **kwargs):
         """ LMDB dataset with unpaired data, for BD degradation
