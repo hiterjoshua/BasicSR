@@ -47,15 +47,23 @@ class VSRModel(BaseModel):
                 self.logger.info('Load generator from: {}'.format(load_path_G))
 
         #reparameterazation
-        if 'convert_flag' in self.opt.values():
+        if 'convert_flag' in self.opt.keys():
             if self.opt['convert_flag'] == True:
                 self.net_G = self.model_convert(self.net_G, self.opt['convert_flag'])
-                self.print_network(self.net_G)
+                print('Video SR model reprameterization converted!!!')
+                self.print_network(self.net_G.srnet)
+                self.print_network(self.net_G.fnet)
 
 
     # add by hukunlei, for model reparameterization
     def model_convert(self, model, convert_flag):
         for module in model.srnet.resblocks:
+            if hasattr(module, 'switch_to_deploy') and convert_flag:
+                module.switch_to_deploy()
+        for module in model.fnet.encoder:
+            if hasattr(module, 'switch_to_deploy') and convert_flag:
+                module.switch_to_deploy()
+        for module in model.fnet.decoder:
             if hasattr(module, 'switch_to_deploy') and convert_flag:
                 module.switch_to_deploy()
         return model
@@ -72,7 +80,7 @@ class VSRModel(BaseModel):
         net_params = sum(map(lambda x: x.numel(), net.parameters()))
 
         self.logger.info(f'Network: {net_cls_str}, with parameters: {net_params:,d}')
-        #self.logger.info(net_str)
+        self.logger.info(net_str)
 
     def config_training(self):
         # set criterion
@@ -166,7 +174,7 @@ class VSRModel(BaseModel):
 
         # infer
         hr_seq = self.net_G.infer_sequence(lr_data, self.device)
-        print('after wards -- ', self.net_G)
+        #print('After wards in INFER: -- ', self.net_G)
         hr_seq = hr_seq[n_pad_front:, ...]
 
         return hr_seq

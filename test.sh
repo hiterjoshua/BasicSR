@@ -6,8 +6,8 @@
 # basic settings
 degradation=$1
 model=$2
-gpu_id=4
-exp_id=singleway
+gpu_id=6
+exp_id=fnet1119
 
 
 # run

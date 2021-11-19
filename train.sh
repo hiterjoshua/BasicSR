@@ -7,7 +7,7 @@
 # basic settings
 degradation=$1
 model=$2
-exp_id=newfnet
+exp_id=fnet1119
 gpu_id=6
 
 

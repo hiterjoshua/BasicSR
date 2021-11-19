@@ -104,9 +104,9 @@ class SeqConv3x3(nn.Module):
         self.type = seq_type
         self.inp_planes = inp_planes
         self.out_planes = out_planes
+        self.mid_planes = int(out_planes * depth_multiplier)
 
         if self.type == 'conv1x1-conv3x3':
-            self.mid_planes = int(out_planes * depth_multiplier)
             conv0 = torch.nn.Conv2d(self.inp_planes, self.mid_planes, kernel_size=1, padding=0)
             self.k0 = conv0.weight
             self.b0 = conv0.bias
@@ -116,7 +116,6 @@ class SeqConv3x3(nn.Module):
             self.b1 = conv1.bias
 
         elif self.type == 'conv1x1-conv3x3-conv1x1':
-            self.mid_planes = int(out_planes * depth_multiplier)
             self.padding = nn.ZeroPad2d(1)
 
             self.conv0 = torch.nn.Conv2d(self.inp_planes, self.mid_planes, kernel_size=1, padding=0)
@@ -125,7 +124,6 @@ class SeqConv3x3(nn.Module):
             self.k0 = self.conv0.weight
         
         elif self.type == 'conv3x3-conv1x1':
-            self.mid_planes = int(out_planes * depth_multiplier)
             self.padding = nn.ZeroPad2d(1)
 
             self.conv0 = torch.nn.Conv2d(self.inp_planes, self.mid_planes, kernel_size=3, padding=0)

@@ -174,5 +174,12 @@ scirpts/create_lmdb.py resize_BD_BI.py could be used for lmdb generation and lr 
 ### A. 20211102 update:
 SRNet changed to smaller network and renamed RepVSR network, lmdb load style and input channels ought to be modified in recent time, take YUV problem as urgent affair.
 
-### A. 20211105 update:
+### B. 20211105 update:
 YUV single channel mode has been finished, include data processing, vsr_model infer stage code and gauss blur function rewrite.
+
+### C. 20211112 update:
+Finished Repameterization part, could change the origin architecture to the rep arch
+Finished Fnet simplification, and start Fnet training, the number of parameters is decreased rapidly, which proves the powerful rep trick in deep learning. 
+
+### D. 20211119 update:
+finished the FNet part, now the network change a lot, the number of parameter is about 24k respectively, which include SRNet 17k and FNet 7k. 
