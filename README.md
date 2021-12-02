@@ -183,3 +183,19 @@ Finished Fnet simplification, and start Fnet training, the number of parameters 
 
 ### D. 20211119 update:
 finished the FNet part, now the network change a lot, the number of parameter is about 24k respectively, which include SRNet 17k and FNet 7k. 
+
+bash profile.sh BD REPVSR 1x144x180
+bash test.sh BD REPVSR
+bash train.sh BD REPVSR
+
+
+### E. 20211128 update:
+实验细节记录部分：在REPVSR目录下，进行的是VSR部分效果与效率实验的部分
+001：重头训练达到网络pretrain的效果
+singleway：对SRNet进行简化，将三通道修改为单通道
+newfnet/fnet1117：对SRNet进行简化，外加FNet进行第一版本的简化处理，大概是1-3-1的重参数化结构
+fnet11119：仿照SRNet，对FNet简化，上下采样数由8简化到4；效果不佳
+
+fnet1124：SRNet数目为6，FNet上下采样恢复为8，同时加大内部channel数目
+fnet1124three：在上面的基础上恢复三通道策略
+fnet1124srnet：在上面的基础上，SRNet数目为6，FNet直接恢复为初始形式；

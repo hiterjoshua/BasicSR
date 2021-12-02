@@ -7,8 +7,8 @@
 # basic settings
 degradation=$1
 model=$2
-exp_id=001
-gpu_id=0
+exp_id=fnet1119
+gpu_id=6
 # specify the size of input data in the format of [color]x[height]x[weight]
 lr_size=$3
 

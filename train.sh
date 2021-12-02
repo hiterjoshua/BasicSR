@@ -7,8 +7,8 @@
 # basic settings
 degradation=$1
 model=$2
-exp_id=fnet1119
-gpu_id=6
+exp_id=fnet1124three
+gpu_id=4
 
 
 # retain training or train from scratch

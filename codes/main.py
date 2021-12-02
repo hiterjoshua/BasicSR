@@ -251,6 +251,7 @@ def profile(opt, lr_size, test_speed=False):
 
     # create model
     net_G = define_generator(opt).to(device)
+    #net_G = define_model(opt).to(device)
 
     # get dummy input
     dummy_input_dict = net_G.generate_dummy_input(lr_size)

@@ -33,14 +33,13 @@ def create_dataloader(opt, dataset_idx='train'):
             enlarged_crop_size = data_opt['crop_size'] + 2 * int(sigma * 3.0)
 
             # create dataset
-            if 'singleY' in opt['dataset']['mode'].keys():
-                if opt['dataset']['mode']['singleY'] == True:
-                    dataset = UnpairedLMDBDataset_single(
-                        data_opt,
-                        crop_size=enlarged_crop_size,  # override
-                        tempo_extent=opt['train']['tempo_extent'],
-                        moving_first_frame=opt['train'].get('moving_first_frame', False),
-                        moving_factor=opt['train'].get('moving_factor', 1.0))
+            if 'singleY' in opt['dataset']['mode'].keys() and opt['dataset']['mode']['singleY'] == True:
+                dataset = UnpairedLMDBDataset_single(
+                    data_opt,
+                    crop_size=enlarged_crop_size,  # override
+                    tempo_extent=opt['train']['tempo_extent'],
+                    moving_first_frame=opt['train'].get('moving_first_frame', False),
+                    moving_factor=opt['train'].get('moving_factor', 1.0))
             else:
                 dataset = UnpairedLMDBDataset(
                     data_opt,
@@ -64,15 +63,14 @@ def create_dataloader(opt, dataset_idx='train'):
     # -------------- loader for testing -------------- #
     elif dataset_idx.startswith('test'):
         # create data loader
-        if 'singleY' in opt['dataset']['mode'].keys():
-            if opt['dataset']['mode']['singleY'] == True:
-                dataset = PairedFolderDataset_single(data_opt, scale=opt['scale'])
-                loader = DataLoader(
-                    dataset=dataset,
-                    batch_size=1,
-                    shuffle=False,
-                    num_workers=data_opt['num_workers'],
-                    pin_memory=data_opt['pin_memory'])
+        if 'singleY' in opt['dataset']['mode'].keys() and opt['dataset']['mode']['singleY'] == True:
+            dataset = PairedFolderDataset_single(data_opt, scale=opt['scale'])
+            loader = DataLoader(
+                dataset=dataset,
+                batch_size=1,
+                shuffle=False,
+                num_workers=data_opt['num_workers'],
+                pin_memory=data_opt['pin_memory'])
         else:
             dataset = PairedFolderDataset(data_opt, scale=opt['scale'])
             loader = DataLoader(

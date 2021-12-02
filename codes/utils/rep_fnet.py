@@ -146,11 +146,11 @@ class REP_FNet(nn.Module):
     def __init__(self, in_nc):
         super(REP_FNet, self).__init__()
 
-        self.encoder = nn.Sequential(RBFNet(2*in_nc, 16, 4), RBFNet(16, 16, 2))
+        self.encoder = nn.Sequential(RBFNet(2*in_nc, 16, 4), RBFNet(16, 32, 4),RBFNet(32, 32, 2))
         self.act = nn.LeakyReLU(0.2, inplace=True)
         self.pooling = nn.MaxPool2d(2, 2)
-        self.decoder = nn.Sequential(RBFNet(16, 16, 2), RBFNet(16, 16, 2))
-        self.flowRB = torch.nn.Conv2d(16, 2, kernel_size=3, padding=1)
+        self.decoder = nn.Sequential(RBFNet(32, 16, 2), RBFNet(16, 16, 2), RBFNet(16, 8, 2))
+        self.flowRB = torch.nn.Conv2d(8, 2, kernel_size=3, padding=1)
     
     def forward(self, x1, x2):
         """ Compute optical flow from x1 to x2
