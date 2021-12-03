@@ -23,7 +23,8 @@ def create_kernel(opt):
         [zero_kernel, zero_kernel, gaussian_kernel]])
     
 
-    if 'singleY' in opt['dataset']['mode'].keys() and opt['dataset']['mode']['singleY'] == True:
+    if 'singleY' in opt['dataset']['mode'].keys() and\
+            opt['dataset']['mode']['singleY'] == True:
         kernel = np.float32([[gaussian_kernel]])
 
     device = torch.device(opt['device'])

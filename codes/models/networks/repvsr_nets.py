@@ -114,7 +114,7 @@ class SRNet(nn.Module):
 
         self.in_nc = in_nc
         if self.in_nc == 3:
-            nf = 64
+            nf = 16
         # input conv.
         self.conv_in = nn.Sequential(
             nn.Conv2d((scale**2 + 1) * in_nc, nf, 3, 1, 1, bias=True),
@@ -130,7 +130,7 @@ class SRNet(nn.Module):
             nn.ReLU(inplace=True))
 
         # output conv.
-        self.conv_out = nn.Conv2d(4, out_nc, 3, 1, 1, bias=True)
+        self.conv_out = nn.Conv2d(16, 48, 3, 1, 1, bias=True)
 
     def forward(self, lr_curr, hr_prev_tran):
         """ lr_curr: the current lr data in shape nchw
@@ -140,10 +140,10 @@ class SRNet(nn.Module):
         for block in self.resblocks:
             out = block(out)
             out = self.act(out)
-        out = self.conv_up_pixelshuffle(out)
         if self.in_nc == 3:
             out = self.conv_out(out)
-
+            out = self.act(out)
+        out = self.conv_up_pixelshuffle(out)
         return out
 
 
