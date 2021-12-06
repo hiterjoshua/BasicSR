@@ -4,11 +4,12 @@
 # be found and modified in a train.yml file under the experiment dir
 
 
+
 # basic settings
 degradation=$1
 model=$2
-exp_id=fnet1203three
-gpu_id=2
+exp_id=SRNet_1206trans
+gpu_id=7
 
 
 # retain training or train from scratch

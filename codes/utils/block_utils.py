@@ -291,6 +291,60 @@ class RepVSRRB(nn.Module):
         self.__delattr__('conv1x1_lpl')
 
 
+class RepVSRRB_nores(nn.Module):
+    def __init__(self, inp_planes, out_planes, depth_multiplier, deploy_flag = False):
+        super(RepVSRRB_nores, self).__init__()
+
+        self.depth_multiplier = depth_multiplier
+        self.inp_planes = inp_planes
+        self.out_planes = out_planes
+        self.deploy = deploy_flag
+        
+        if self.deploy:
+            self.rbr_reparam = nn.Conv2d(self.inp_planes, self.out_planes, kernel_size=3, padding=1, bias=True)
+        else:
+            self.conv3x3 = torch.nn.Conv2d(self.inp_planes, self.out_planes, kernel_size=3, padding=1)
+            self.conv1x1_3x3 = SeqConv3x3('conv1x1-conv3x3', self.inp_planes, self.out_planes, self.depth_multiplier)
+            self.conv1x1_3x3_1x1 = SeqConv3x3('conv1x1-conv3x3-conv1x1', self.inp_planes, self.out_planes, self.depth_multiplier)   
+            self.conv3x3_1x1 = SeqConv3x3('conv3x3-conv1x1', self.inp_planes, self.out_planes, self.depth_multiplier)       
+            self.conv1x1_lpl = SeqConv3x3('conv1x1-laplacian', self.inp_planes, self.out_planes, -1)
+
+    def forward(self, x):
+        if hasattr(self, 'rbr_reparam'):
+            y = self.rbr_reparam(x)
+        else:
+            y = self.conv3x3(x)     + \
+                self.conv1x1_3x3(x) + \
+                self.conv1x1_3x3_1x1(x) + \
+                self.conv3x3_1x1(x) + \
+                self.conv1x1_lpl(x)
+        return y
+
+    def rep_params(self):
+        K0, B0 = self.conv3x3.weight, self.conv3x3.bias
+        K1, B1 = self.conv1x1_3x3.rep_params()
+        K2, B2 = self.conv1x1_3x3_1x1.rep_params()
+        K3, B3 = self.conv3x3_1x1.rep_params()
+        K4, B4 = self.conv1x1_lpl.rep_params()
+        RK, RB = (K0+K1+K2+K3+K4), (B0+B1+B2+B3+B4)
+
+        return RK, RB
+    
+    def switch_to_deploy(self):
+        if hasattr(self, 'rbr_reparam'):
+            return
+        self.rbr_reparam = torch.nn.Conv2d(self.inp_planes, self.out_planes, kernel_size=3, padding=1)
+        RK, RB = self.rep_params()
+        self.rbr_reparam.weight.data = RK
+        self.rbr_reparam.bias.data = RB
+        for para in self.parameters():
+            para.detach_()
+        self.__delattr__('conv3x3')
+        self.__delattr__('conv1x1_3x3')
+        self.__delattr__('conv1x1_3x3_1x1')
+        self.__delattr__('conv3x3_1x1')
+        self.__delattr__('conv1x1_lpl')
+
 if __name__ == '__main__':
 
     # # test seq-conv
