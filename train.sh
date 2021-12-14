@@ -8,7 +8,7 @@
 # basic settings
 degradation=$1
 model=$2
-exp_id=SRNet_1206trans
+exp_id=SRNet1210_cascade
 gpu_id=7
 
 

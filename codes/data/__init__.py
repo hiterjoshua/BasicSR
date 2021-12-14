@@ -33,7 +33,7 @@ def create_dataloader(opt, dataset_idx='train'):
             enlarged_crop_size = data_opt['crop_size'] + 2 * int(sigma * 3.0)
 
             # create dataset
-            if 'singleY' in opt['dataset']['mode'].keys() and\
+            if 'singleY' in opt['dataset']['mode'].keys() and \
                     opt['dataset']['mode']['singleY'] == True:
                 dataset = UnpairedLMDBDataset_single(
                     data_opt,

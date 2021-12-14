@@ -205,3 +205,8 @@ fnet1203three：在fnet1124three的基础上将通道数更改为16，16转48，
 SRNet_120648: 在fnet1124three的基础上将通道数更改为48，减少不必要的参数量
 SRNet_1206cascade：对6的block进行渐变的block变化，16-32-48
 SRNet_1206trans：一直是16，最后使用反卷积；避免pixel-shuffle对通道数的要求
+
+SRNet1210_64:原来64通道的模型，block内部升维改为2，通道有改进，大概是48-32-16-32-48的递进改变
+SRNet1210_48：48重新实验，升维改为2
+SRNet1210_cascade：cascade做改进，升维改为2，因为是16进，所以保持16-32-48
+SRNet1210_trans：一直是16，最后使用反卷积；block数目定为10；升维度改为2
