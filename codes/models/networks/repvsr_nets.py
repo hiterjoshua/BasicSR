@@ -33,7 +33,7 @@ class FRNet(BaseSequenceGenerator):
         # SRNet_120648  SRNet_1206cascade SRNet_1206trans
         # SRNet1210_64 SRNet1210_48 SRNet1210_cascade SRNet1210_trans
         # SRNet_fnet1124three
-        self.srnet = SRNet_fnet1124three(in_nc, out_nc, nf, nb, self.upsample_func)
+        self.srnet = SRNet1210_cascade(in_nc, out_nc, nf, nb, self.upsample_func)
         self.print_network_fnet(self.fnet)
         self.print_network_srnet(self.srnet)
 
