@@ -171,6 +171,11 @@ scirpts/create_lmdb.py resize_BD_BI.py could be used for lmdb generation and lr 
 2. Doing: change SRNet to smaller network, namned RepFrvsr network.
 3. TODO: FNet reparameterazation and lmdb change, input channel and output channel changed from 3 to 1, follow the more advanced style--YUV style.
 
+## Project launch
+bash profile.sh BD REPVSR 1x144x180
+bash test.sh BD REPVSR
+bash train.sh BD REPVSR
+
 ### A. 20211102 update:
 SRNet changed to smaller network and renamed RepVSR network, lmdb load style and input channels ought to be modified in recent time, take YUV problem as urgent affair.
 
@@ -183,11 +188,6 @@ Finished Fnet simplification, and start Fnet training, the number of parameters 
 
 ### D. 20211119 update:
 finished the FNet part, now the network change a lot, the number of parameter is about 24k respectively, which include SRNet 17k and FNet 7k. 
-
-bash profile.sh BD REPVSR 1x144x180
-bash test.sh BD REPVSR
-bash train.sh BD REPVSR
-
 
 ### E. 20211128 update:
 实验细节记录部分：在REPVSR目录下，进行的是VSR部分效果与效率实验的部分

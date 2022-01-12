@@ -53,6 +53,11 @@ class VSRModel(BaseModel):
                 print('Video SR model reprameterization converted!!!')
                 self.print_network(self.net_G.srnet)
                 self.print_network(self.net_G.fnet)
+                # from ptflops import get_model_complexity_info
+                # flops, params = get_model_complexity_info(self.net_G , [(3, 224, 224), (3, 224, 224),(3, 896, 896)],  \
+                #     as_strings=True, print_per_layer_stat=True) #不用写batch_size大小，默认batch_size=1
+                # print('Flops:  ' + flops)
+                # print('Params: ' + params)
 
 
     # add by hukunlei, for model reparameterization

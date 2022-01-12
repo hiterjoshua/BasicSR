@@ -19,7 +19,7 @@ class FRNet(BaseSequenceGenerator):
     """
 
     def __init__(self, in_nc=3, out_nc=3, nf=64, nb=16, degradation='BI',
-                 scale=4):
+                 scale=4, profile_flag=False):
         super(FRNet, self).__init__()
 
         self.scale = scale
@@ -32,10 +32,26 @@ class FRNet(BaseSequenceGenerator):
         self.fnet = REP_FNet(in_nc)
         # SRNet_120648  SRNet_1206cascade SRNet_1206trans
         # SRNet1210_64 SRNet1210_48 SRNet1210_cascade SRNet1210_trans
-        # SRNet_fnet1124three
-        self.srnet = SRNet1210_cascade(in_nc, out_nc, nf, nb, self.upsample_func)
+        # SRNet_fnet1124three  
+        self.srnet = SRNet_fnet1124three(in_nc, out_nc, nf, nb, self.upsample_func)
+        
         self.print_network_fnet(self.fnet)
         self.print_network_srnet(self.srnet)
+
+        #reparameterazation mainly for profile, Train or Test, flag should be setting to False.
+        profile_flag = False
+        for module in self.srnet.resblocks:
+            if hasattr(module, 'switch_to_deploy') and profile_flag:
+                module.switch_to_deploy()
+        for module in self.fnet.encoder:
+            if hasattr(module, 'switch_to_deploy') and profile_flag:
+                module.switch_to_deploy()
+        for module in self.fnet.decoder:
+            if hasattr(module, 'switch_to_deploy') and profile_flag:
+                module.switch_to_deploy()
+        print('Profile process: Video SR model reprameterization converted!!!')
+        # print(self.fnet, self.srnet)
+
 
     def generate_dummy_input(self, lr_size):
         c, lr_h, lr_w = lr_size

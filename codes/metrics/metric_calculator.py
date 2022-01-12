@@ -18,6 +18,7 @@ class MetricCalculator():
             * PSNR (RGB and Y)
             * LPIPS
             * tOF as described in TecoGAN paper
+            * SSIM for the coming paper
 
         TODO:
             * save/print metrics in a fixed order
@@ -34,6 +35,7 @@ class MetricCalculator():
         self.lpips_mult = 1
         self.dm = None
         self.tof_mult = 1
+        self.ssim_mult = 1
 
         self.reset()
 
@@ -57,6 +59,9 @@ class MetricCalculator():
 
             if metric_type.lower() == 'tof':
                 self.tof_mult = cfg.get('mult', self.tof_mult)
+
+            if metric_type.lower() == 'ssim':
+                self.ssim_mult = cfg.get('mult', self.ssim_mult)
 
     def reset(self):
         self.reset_per_sequence()
@@ -205,6 +210,21 @@ class MetricCalculator():
                 if self.pred_img_pre is not None:
                     tOF = self.compute_tOF()
                     metric_dict['tOF'].append(tOF)
+            
+            elif metric_type == 'SSIM':
+                SSIM = self.compute_SSIM()
+                metric_dict['SSIM'].append(SSIM)
+
+    def compute_SSIM(self):
+        from skimage.metrics import structural_similarity as compare_ssim
+        if self.single_flag:
+            true_img = self.true_img_cur
+            pred_img = self.pred_img_cur
+        else:
+            true_img = data_utils.rgb_to_ycbcr(self.true_img_cur)[..., 0]
+            pred_img = data_utils.rgb_to_ycbcr(self.pred_img_cur)[..., 0]
+        ssim = compare_ssim(true_img, pred_img, data_range=pred_img.max() - pred_img.min())
+        return ssim
 
     def compute_PSNR(self):
         if self.single_flag:

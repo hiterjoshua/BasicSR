@@ -6,8 +6,8 @@
 # basic settings
 degradation=$1
 model=$2
-gpu_id=3
-exp_id=SRNet1210_cascade
+gpu_id=4
+exp_id=fnet1124three
 
 
 # run
