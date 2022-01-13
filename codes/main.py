@@ -189,6 +189,12 @@ def test(opt):
             except:
                 print('No metirc need to compute!')
 
+            # extra sentence for bicubic add by hukunlei
+            # true_dir=r'/data1/hukunlei/vsr/EGVSR/data/Vid4/GT'
+            # pred_dir=r'/data1/hukunlei/vsr/EGVSR/data/Vid4/Bicubic'
+            # metric_calculator.compute_dataset_metrics(true_dir, pred_dir)
+            # metric_calculator.display_results()
+
             # create data loader
             test_loader = create_dataloader(opt, dataset_idx=dataset_idx)
 
@@ -197,8 +203,7 @@ def test(opt):
 
                 # fetch data
                 lr_data = data['lr'][0]
-                if 'singleY' in opt['dataset']['mode'].keys() and\
-                        opt['dataset']['mode']['singleY'] == True:                  
+                if 'mode' in opt['dataset'].keys() and opt['dataset']['mode']['singleY'] == True:                
                     uv_data = data['uv'][0]
                 seq_idx = data['seq_idx'][0]
                 frm_idx = [frm_idx[0] for frm_idx in data['frm_idx']]
@@ -210,8 +215,7 @@ def test(opt):
                 if opt['test']['save_res']:
                     res_dir = osp.join(opt['test']['res_dir'], ds_name, model_idx)
                     res_seq_dir = osp.join(res_dir, seq_idx)
-                    if 'singleY' in opt['dataset']['mode'].keys() and\
-                            opt['dataset']['mode']['singleY'] == True:
+                    if 'mode' in opt['dataset'].keys() and opt['dataset']['mode']['singleY'] == True:    
                         data_utils.save_sequence_YUV(res_seq_dir, hr_seq, uv_data, frm_idx, zoom_scale=opt['scale'])
                     else:
                         data_utils.save_sequence(res_seq_dir, hr_seq, frm_idx, to_bgr=True)
@@ -236,7 +240,7 @@ def test(opt):
 
             except:
                 print('No metirc need to save!')
-
+                
             logger.info('-' * 40)
 
     # logging

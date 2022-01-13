@@ -71,3 +71,6 @@ metric:
 
   tOF:
     mult: 1.0
+
+  SSIM:
+    mult: 1.0

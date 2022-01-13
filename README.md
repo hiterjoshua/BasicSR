@@ -175,6 +175,7 @@ scirpts/create_lmdb.py resize_BD_BI.py could be used for lmdb generation and lr 
 bash profile.sh BD REPVSR 1x144x180
 bash test.sh BD REPVSR
 bash train.sh BD REPVSR
+Git push: git push -u origin master:EGVSR
 
 ### A. 20211102 update:
 SRNet changed to smaller network and renamed RepVSR network, lmdb load style and input channels ought to be modified in recent time, take YUV problem as urgent affair.
@@ -196,8 +197,8 @@ singleway：对SRNet进行简化，将三通道修改为单通道
 newfnet/fnet1117：对SRNet进行简化，外加FNet进行第一版本的简化处理，大概是1-3-1的重参数化结构
 fnet1119：仿照SRNet，对FNet简化，上下采样数由8简化到4；效果不佳
 
-fnet1124：SRNet数目为6，FNet上下采样恢复为8，同时加大内部channel数目
-fnet1124three：在上面的基础上恢复三通道策略
+fnet1124：SRNet数目为6，FNet上下采样恢复为8，同时加大内部channel数目,RepVSR-S
+fnet1124three：在上面的基础上恢复三通道策略,RepVSR-L
 fnet1124srnet：在上面的基础上，SRNet数目为6，FNet直接恢复为初始形式；
 
 fnet1203three：在fnet1124three的基础上将通道数更改为16，16转48，48直接做pixel shuffle的操作

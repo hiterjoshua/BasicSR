@@ -6,8 +6,8 @@
 # basic settings
 degradation=$1
 model=$2
-gpu_id=4
-exp_id=fnet1124three
+gpu_id=5
+exp_id=fnet1124three   #001  fnet1124three
 
 
 # run

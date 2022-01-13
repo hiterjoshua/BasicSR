@@ -28,7 +28,9 @@ class MetricCalculator():
         # initialize
         self.metric_opt = opt['metric']
         self.device = torch.device(opt['device'])
-        self.single_flag = opt['dataset']['mode']['singleY']
+        self.single_flag = False
+        if 'mode' in opt['dataset'].keys() and opt['dataset']['mode']['singleY'] == True:                
+            self.single_flag = opt['dataset']['mode']['singleY']
 
         self.psnr_mult = 1
         self.psnr_colorspace = ''

@@ -64,8 +64,7 @@ def create_dataloader(opt, dataset_idx='train'):
     # -------------- loader for testing -------------- #
     elif dataset_idx.startswith('test'):
         # create data loader
-        if 'singleY' in opt['dataset']['mode'].keys() and\
-                opt['dataset']['mode']['singleY'] == True:
+        if 'mode' in opt['dataset'].keys() and opt['dataset']['mode']['singleY'] == True:
             dataset = PairedFolderDataset_single(data_opt, scale=opt['scale'])
             loader = DataLoader(
                 dataset=dataset,
