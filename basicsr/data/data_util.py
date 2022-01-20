@@ -186,7 +186,7 @@ def paired_paths_from_meta_info_file(folders, keys, meta_info_file, filename_tmp
         paths.append(dict([(f'{input_key}_path', input_path), (f'{gt_key}_path', gt_path)]))
     return paths
 
-def paired_paths_from_folder_Real3w(folders, keys, need_gt):
+def paired_paths_from_folder_Real3w(folders, keys):
     """Generate paired paths from folders.
 
     Args:
@@ -213,7 +213,13 @@ def paired_paths_from_folder_Real3w(folders, keys, need_gt):
                                                f'{len(input_paths)}, {len(gt_paths)}.')
 
     paths = []
-    if need_gt:
+    samename_flag = True
+    if samename_flag:
+        for input_path in input_paths:
+            gt_path = osp.join(gt_folder, input_path)
+            input_path = osp.join(input_folder, input_path)
+            paths.append(dict([(f'{input_key}_path', input_path), (f'{gt_key}_path', gt_path)]))
+    else:
         for input_path in input_paths:
             hr_p_pre = osp.split(osp.split(input_path)[0])[0]
             back_name = osp.split(input_path)[1]
@@ -223,11 +229,6 @@ def paired_paths_from_folder_Real3w(folders, keys, need_gt):
 
             assert gt_name in gt_paths, (f'{gt_name} is not in ' f'{gt_key}_paths.')
             gt_path = osp.join(gt_folder, gt_name)
-            input_path = osp.join(input_folder, input_path)
-            paths.append(dict([(f'{input_key}_path', input_path), (f'{gt_key}_path', gt_path)]))
-    else:
-        for input_path in input_paths:
-            gt_path = osp.join(gt_folder, input_path)
             input_path = osp.join(input_folder, input_path)
             paths.append(dict([(f'{input_key}_path', input_path), (f'{gt_key}_path', gt_path)]))
     return paths

@@ -44,6 +44,37 @@ def compute_ck(s_1, s_2):
 
     return {'weight': new_weight, 'bias': new_bias}
 
+def onnx_trans(model):
+    import torch
+    import torch.onnx
+    import os
+    # create random input
+    input_data = torch.randn(1,1,2040,1530).cuda()
+
+    use_cuda = torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu")
+    model.eval()
+
+    # Forward pass
+    output = model(input_data)
+
+    # 设置输入张量名，多个输入就是多个名
+    input_names = ["input"]
+    # 设置输出张量名
+    output_names = ["output"]
+
+    # Export model to onnx
+    onnx_path = "./onnx/"
+    if not os.path.exists(onnx_path):
+        os.mkdir(onnx_path)
+    if not os.path.exists(tf_path):
+        os.mkdir(tf_path)
+    filename_onnx = onnx_path + "net_g_300000_reparam-2040x1530.onnx"
+
+    torch.onnx.export(model, input_data, filename_onnx, input_names=input_names, 
+    output_names=output_names, opset_version=11, do_constant_folding=True)
+
+
 def test_pipeline(root_path):
     # parse options, set distributed setting, set ramdom seed
     opt = parse_options(root_path, is_train=False)
@@ -75,10 +106,14 @@ def test_pipeline(root_path):
             if reparam_name is not None:
                 model.save_reparam(reparam_name)
 
+        # onnx transfomation to do the time test for single image, add by hukunlei 20220118
+        # onnx_trans(model.net_g)
+
         for test_loader in test_loaders:
             test_set_name = test_loader.dataset.opt['name']
             logger.info(f'Testing {test_set_name}...')
             model.validation(test_loader, current_iter=opt['name'], tb_logger=None, save_img=opt['val']['save_img'])
+
 
         # validation
         if not opt['convert_flag']:

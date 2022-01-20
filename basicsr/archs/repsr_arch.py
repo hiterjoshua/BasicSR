@@ -57,7 +57,7 @@ class RepSR(nn.Module):
             self.body = make_layer(RBRepSR, num_block, num_feat=num_feat, res_scale=res_scale, pytorch_init=True)
 
         self.conv_after_body = nn.Conv2d(num_feat, upscale**2, 3, 1, 1)
-        self.upsample = nn.PixelShuffle(4)
+        self.upsample = nn.PixelShuffle(upscale)
 
 
     def forward(self, x):

@@ -67,7 +67,7 @@ class Real3wDataset(data.Dataset):
             self.paths = paired_paths_from_meta_info_file([self.lq_folder, self.gt_folder], ['lq', 'gt'],
                                                           self.opt['meta_info_file'], self.filename_tmpl)
         else:
-            self.paths = paired_paths_from_folder_Real3w([self.lq_folder, self.gt_folder], ['lq', 'gt'], self.need_gt)
+            self.paths = paired_paths_from_folder_Real3w([self.lq_folder, self.gt_folder], ['lq', 'gt'])
 
     def __getitem__(self, index):
         if self.file_client is None:
