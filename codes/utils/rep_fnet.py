@@ -239,6 +239,34 @@ class REP_FNet(nn.Module):
         out = torch.tanh(self.flowRB(out)) * 24  # 24 is the max velocity
         return out
 
+class REP_FNet_enhance(nn.Module):
+    """ Optical flow estimation network
+    """
+
+    def __init__(self, in_nc):
+        super(REP_FNet_enhance, self).__init__()
+
+        self.encoder = nn.Sequential(RBFNet(2*in_nc, 16, 4), RBFNet(16, 32, 4), RBFNet(32, 64, 4), RBFNet(64, 128, 2))
+        self.act = nn.LeakyReLU(0.2, inplace=True)
+        self.pooling = nn.MaxPool2d(2, 2)
+        self.decoder = nn.Sequential(RBFNet(128, 64, 2), RBFNet(64, 32, 2), RBFNet(32, 16, 2), RBFNet(16, 8, 2))
+        self.flowRB = torch.nn.Conv2d(8, 2, kernel_size=3, padding=1)
+    
+    def forward(self, x1, x2):
+        """ Compute optical flow from x1 to x2
+        """
+        out = torch.cat([x1, x2], dim=1)
+        for block in self.encoder:
+            out = block(out)
+            out = self.act(out)
+            out = self.pooling(out)
+        for block in self.decoder:
+            out = block(out)
+            out = F.interpolate(out, scale_factor=2, mode='bilinear', align_corners=False)
+        out = torch.tanh(self.flowRB(out)) * 24  # 24 is the max velocity
+        return out
+
+
 if __name__ == '__main__':
 
     # # test seq-conv

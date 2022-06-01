@@ -13,10 +13,13 @@ from models.networks import define_generator
 from metrics.metric_calculator import MetricCalculator
 from metrics.model_summary import register, profile_model
 from utils import base_utils, data_utils
-
-os.environ["CUDA_VISIBLE_DEVICES"] = "3,4"
+from torch.utils.tensorboard import SummaryWriter
+ 
+os.environ["CUDA_VISIBLE_DEVICES"] = "5,6"
 
 def train(opt):
+    writer = SummaryWriter(comment='REPVSR_tensorboard')
+
     # logging
     logger = base_utils.get_logger('base')
     logger.info('{} Options {}'.format('='*20, '='*20))
@@ -67,6 +70,11 @@ def train(opt):
 
             # update running log
             model.update_running_log()
+            
+            # writer loss to tensorboard
+            log_dict = model.get_running_log()
+            writer.add_scalars('loss', {"l_pix_G": log_dict['l_pix_G'],
+                                        "l_warp_G": log_dict['l_warp_G']}, iter)
 
             # log
             if log_freq > 0 and iter % log_freq == 0:
@@ -141,6 +149,7 @@ def train(opt):
                     else:
                         # print directly
                         metric_calculator.display_results()
+    writer.close()
 
 
 def test(opt):

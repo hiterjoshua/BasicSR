@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 # This script is used to train a model. More specific setttings can
 # be found and modified in a train.yml file under the experiment dir
 
@@ -8,8 +7,8 @@
 # basic settings
 degradation=$1
 model=$2
-exp_id=SRNet1210_cascade
-gpu_id=7
+exp_id=fnet0529three_enhance
+gpu_id=3
 
 
 # retain training or train from scratch

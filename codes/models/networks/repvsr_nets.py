@@ -7,7 +7,7 @@ from .base_nets import BaseSequenceGenerator, BaseSequenceDiscriminator
 from utils.net_utils import space_to_depth, backward_warp, get_upsampling_func
 from utils.net_utils import initialize_weights
 from utils.data_utils import float32_to_uint8
-from utils.rep_fnet import REP_FNet, FNet
+from utils.rep_fnet import REP_FNet, FNet, REP_FNet_enhance
 from utils.rep_srnet import *
 
 import flow_vis
@@ -28,11 +28,11 @@ class FRNet(BaseSequenceGenerator):
         self.upsample_func = get_upsampling_func(self.scale, degradation)
 
         # define fnet & srnet
-        # self.fnet = FNet(in_nc)
-        self.fnet = REP_FNet(in_nc)
+        # FNet   REP_FNet_enhance  REP_FNet
+        self.fnet = REP_FNet_enhance(in_nc)
         # SRNet_120648  SRNet_1206cascade SRNet_1206trans
         # SRNet1210_64 SRNet1210_48 SRNet1210_cascade SRNet1210_trans
-        # SRNet_fnet1124three  
+        # SRNet_fnet1124three   SRNet_fnet1124three_enhance
         self.srnet = SRNet_fnet1124three(in_nc, out_nc, nf, nb, self.upsample_func)
         
         self.print_network_fnet(self.fnet)
@@ -80,9 +80,9 @@ class FRNet(BaseSequenceGenerator):
         # estimate lr flow (lr_curr -> lr_prev)
         lr_flow = self.fnet(lr_curr, lr_prev)
 
-        # pad if size is not a multiple of 8
-        pad_h = lr_curr.size(2) - lr_curr.size(2) // 8 * 8
-        pad_w = lr_curr.size(3) - lr_curr.size(3) // 8 * 8
+        # pad if size is not a multiple of 16
+        pad_h = lr_curr.size(2) - lr_curr.size(2) // 16 * 16
+        pad_w = lr_curr.size(3) - lr_curr.size(3) // 16 * 16
         lr_flow_pad = F.pad(lr_flow, (0, pad_w, 0, pad_h), 'reflect')
 
         # # change the encoder-decoder down/up scale from 8 to 4, so the 8 ought to change to 4 either

@@ -7,7 +7,7 @@
 degradation=$1
 model=$2
 gpu_id=5
-exp_id=fnet1124three   #001  fnet1124three
+exp_id=fnet0529three_enhance   #001  fnet1124three
 
 
 # run
