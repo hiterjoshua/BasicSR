@@ -29,7 +29,7 @@ class FRNet(BaseSequenceGenerator):
 
         # define fnet & srnet
         # FNet   REP_FNet_enhance  REP_FNet
-        self.fnet = REP_FNet_enhance(in_nc)
+        self.fnet = REP_FNet(in_nc)
         # SRNet_120648  SRNet_1206cascade SRNet_1206trans
         # SRNet1210_64 SRNet1210_48 SRNet1210_cascade SRNet1210_trans
         # SRNet_fnet1124three   SRNet_fnet1124three_enhance
@@ -80,9 +80,14 @@ class FRNet(BaseSequenceGenerator):
         # estimate lr flow (lr_curr -> lr_prev)
         lr_flow = self.fnet(lr_curr, lr_prev)
 
-        # pad if size is not a multiple of 16
-        pad_h = lr_curr.size(2) - lr_curr.size(2) // 16 * 16
-        pad_w = lr_curr.size(3) - lr_curr.size(3) // 16 * 16
+        # # pad if size is not a multiple of 16
+        # pad_h = lr_curr.size(2) - lr_curr.size(2) // 16 * 16
+        # pad_w = lr_curr.size(3) - lr_curr.size(3) // 16 * 16
+        # lr_flow_pad = F.pad(lr_flow, (0, pad_w, 0, pad_h), 'reflect')
+
+         # pad if size is not a multiple of 8
+        pad_h = lr_curr.size(2) - lr_curr.size(2) // 8 * 8
+        pad_w = lr_curr.size(3) - lr_curr.size(3) // 8 * 8
         lr_flow_pad = F.pad(lr_flow, (0, pad_w, 0, pad_h), 'reflect')
 
         # # change the encoder-decoder down/up scale from 8 to 4, so the 8 ought to change to 4 either

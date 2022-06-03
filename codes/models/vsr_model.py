@@ -8,6 +8,8 @@ from .networks import define_generator
 from .optim import define_criterion, define_lr_schedule
 from utils import net_utils, data_utils
 
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 class VSRModel(BaseModel):
     """ A model wraper for objective video super-resolution

@@ -168,6 +168,7 @@ This code is built on the following projects. We thank the authors for sharing t
 ## Code usage
 1. DATA: When download the frames from Vimeo and Youtube datasets online, you would get the separated images as groundtruth data, and this file dataloader asked user to use lmdb format data. 
 scirpts/create_lmdb.py resize_BD_BI.py could be used for lmdb generation and lr transformation, but noticed that only hr lmdb demanded in this repo.
+Also pay attention to vemioGAN dataset, there are image rename python files in this repo.
 2. Doing: change SRNet to smaller network, namned RepFrvsr network.
 3. TODO: FNet reparameterazation and lmdb change, input channel and output channel changed from 3 to 1, follow the more advanced style--YUV style.
 
@@ -214,3 +215,6 @@ SRNet1210_trans：一直是16，最后使用反卷积；block数目定为10；�
 
 fnet0125three_long: fnet1124three基础上将sr block数目由6升到9，panr有0.1db提升
 fnet0529three_enhance ：fnet1124three基础上将sr block数目由6升到10，且光流网络使用的是Fnet_enhance
+
+### F. 20220601 update:
+add tensorboaed part 
